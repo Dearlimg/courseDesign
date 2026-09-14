@@ -16,6 +16,7 @@ import (
 func NewMux() *http.ServeMux {
 	mux := http.NewServeMux()
 	registerExperiments(mux)
+	registerDispatch(mux)
 	mux.HandleFunc("GET /api/instances", handleListInstances)
 	mux.HandleFunc("GET /api/instances/{name}", handleGetInstance)
 	mux.HandleFunc("POST /api/instance/random", handleRandomInstance)
