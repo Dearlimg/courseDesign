@@ -16,16 +16,18 @@ import (
 
 // Params 是 GA 求解参数。
 type Params struct {
-	Population    int     `json:"population"`    // 种群规模
-	Generations   int     `json:"generations"`   // 进化代数上限
-	CrossoverRate float64 `json:"crossoverRate"` // 交叉概率
-	MutationRate  float64 `json:"mutationRate"`  // 变异概率
-	Elitism       int     `json:"elitism"`       // 精英保留个数
-	Selection     string  `json:"selection"`     // tournament / roulette
-	Crossover     string  `json:"crossover"`     // ox / pmx
-	Mutation      string  `json:"mutation"`      // inversion / swap / insert
-	LocalSearch   bool    `json:"localSearch"`   // 每代对最优个体做 2-opt 局部搜索（模因算法）
-	Seed          int64   `json:"seed"`          // 随机种子（0 表示按时间随机）
+	Encoding       string  `json:"encoding"`       // permutation / random-key
+	Initialization string  `json:"initialization"` // random / mixed
+	Population     int     `json:"population"`     // 种群规模
+	Generations    int     `json:"generations"`    // 进化代数上限
+	CrossoverRate  float64 `json:"crossoverRate"`  // 交叉概率
+	MutationRate   float64 `json:"mutationRate"`   // 变异概率
+	Elitism        int     `json:"elitism"`        // 精英保留个数
+	Selection      string  `json:"selection"`      // tournament / roulette
+	Crossover      string  `json:"crossover"`      // ox / pmx
+	Mutation       string  `json:"mutation"`       // inversion / swap / insert
+	LocalSearch    bool    `json:"localSearch"`    // 每代对最优个体做 2-opt 局部搜索（模因算法）
+	Seed           int64   `json:"seed"`           // 随机种子（0 表示按时间随机）
 }
 
 // DefaultParams 返回推荐的默认参数（种子除外）。
@@ -45,6 +47,26 @@ func DefaultParams() Params {
 // Normalize 填充零值字段为默认值并校验取值范围。
 func (p *Params) Normalize() error {
 	d := DefaultParams()
+	if p.Encoding == "" {
+		p.Encoding = "permutation"
+	}
+	if p.Initialization == "" {
+		p.Initialization = "random"
+	}
+	if !slices.Contains([]string{"permutation", "random-key"}, p.Encoding) {
+		return fmt.Errorf("不支持的编码方法")
+	}
+	if !slices.Contains([]string{"random", "mixed"}, p.Initialization) {
+		return fmt.Errorf("不支持的初始化方法")
+	}
+	if p.Encoding == "random-key" {
+		if p.Crossover == "" {
+			p.Crossover = "uniform"
+		}
+		if p.Mutation == "" {
+			p.Mutation = "reset"
+		}
+	}
 	if p.Population == 0 {
 		p.Population = d.Population
 	}
@@ -87,6 +109,12 @@ func (p *Params) Normalize() error {
 	}
 	if !slices.Contains([]string{"tournament", "roulette"}, p.Selection) {
 		return fmt.Errorf("未知选择算子 %q，支持 tournament / roulette", p.Selection)
+	}
+	if p.Encoding == "random-key" {
+		if p.Crossover != "uniform" || p.Mutation != "reset" {
+			return fmt.Errorf("随机键编码须使用均匀交叉与随机重置变异")
+		}
+		return nil
 	}
 	if !slices.Contains([]string{"ox", "pmx"}, p.Crossover) {
 		return fmt.Errorf("未知交叉算子 %q，支持 ox / pmx", p.Crossover)
@@ -134,6 +162,9 @@ func SolveContext(ctx context.Context, inst *tsp.Instance, p Params) (Result, er
 	if inst.Size() < 4 {
 		return Result{}, fmt.Errorf("城市数至少为 4，实际 %d", inst.Size())
 	}
+	if p.Encoding == "random-key" {
+		return solveKeys(ctx, inst, p)
+	}
 	start := time.Now()
 	rng := rand.New(rand.NewSource(p.Seed))
 	n := inst.Size()
@@ -143,6 +174,9 @@ func SolveContext(ctx context.Context, inst *tsp.Instance, p Params) (Result, er
 	pop := make([][]int, p.Population)
 	for i := range pop {
 		pop[i] = rng.Perm(n)
+		if p.Initialization == "mixed" && i < p.Population/2 {
+			pop[i] = nearestTour(dm, rng.Intn(n))
+		}
 	}
 
 	result := Result{

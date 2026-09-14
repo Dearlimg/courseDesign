@@ -1,8 +1,10 @@
 import {$,current,api,notify,text,stats} from './dispatch.js';
 import {playback} from './charts.js';
+import {configPanel} from './config.js';
 const host=$('routeContent');host.className='';
 host.innerHTML='<div class="config"><label>取餐点名称<input id="depotName" value="园区取餐点"></label><label>X 坐标<input id="depotX" type="number" value="10"></label><label>Y 坐标<input id="depotY" type="number" value="10"></label></div><div class="split"><div><label>送达点：每行 地点名称,X,Y<textarea id="routePoints" rows="7" placeholder="图书馆,80,70"></textarea></label><div class="toolbar"><button id="allToRoute">带入全部候选订单</button><button id="routeRun" class="primary">规划配送路线</button></div><p id="routeSource" class="muted">独立编辑的送达点</p><p id="routeStatus" role="status"></p><ol id="routeList"></ol></div><canvas id="routeMap" width="620" height="440" aria-label="配送路线示意图"></canvas></div><div id="routeStats" class="stats"></div><details><summary>查看路线演化过程</summary><p class="muted">回放显示原始 GA 搜索结果；业务采用路线同时与输入顺序基准比较，始终保留更短方案。</p><div id="routePlayback" class="playback"></div><canvas id="routeEvolution" width="900" height="400" aria-label="遗传路线进化图"></canvas></details>';
 let version=0,source=null,stop=()=>{},controller=null;
+const routeParams=configPanel(host,'tsp',()=>stale());
 function save(){try{localStorage.setItem('qiji.route.v1',JSON.stringify({name:$('depotName').value,x:$('depotX').value,y:$('depotY').value,points:$('routePoints').value}));}catch{notify('浏览器无法保存路线输入。',true);}}
 try{const s=JSON.parse(localStorage.getItem('qiji.route.v1'));if(s&&typeof s.points==='string'){ $('depotName').value=s.name;$('depotX').value=s.x;$('depotY').value=s.y;$('routePoints').value=s.points;}}catch{}
 function stale(){version++;controller?.abort();stop();$('routeStatus').textContent='输入已变化，原路线已过期，请重新规划。';$('routeStatus').className='stale';document.dispatchEvent(new Event('routeinvalid'));}
@@ -38,7 +40,7 @@ export function drawRoute(canvas,stops,tour){
 $('routeRun').onclick=async()=>{
  const token=version;stop();
  try{
-  const request=routeInput();controller=new AbortController();$('routeRun').disabled=true;$('routeStatus').textContent='正在优化配送顺序…';$('routeStatus').className='';
+  const request={...routeInput(),params:routeParams()};controller=new AbortController();$('routeRun').disabled=true;$('routeStatus').textContent='正在优化配送顺序…';$('routeStatus').className='';
   const r=await api('/api/dispatch/route',request,controller.signal);if(token!==version)return;
   $('routeStatus').textContent=r.method==='direct'?'送达点较少，已直接计算闭合路线。':r.usedBaseline?'本次未找到更短路线，采用输入顺序基准。':'已生成推荐配送路线。';
   stats($('routeStats'),[['本趟路程',r.distance.toFixed(2),'平面距离单位，包含返站'],['输入顺序基准',r.baselineDistance.toFixed(2),'同一批地点、同一距离模型'],['路程改善',r.baselineDistance?(r.improvement*100).toFixed(1)+'%':'不适用','不代表实际配送时间改善']]);
@@ -50,4 +52,3 @@ $('routeRun').onclick=async()=>{
  }catch(e){if(e.name!=='AbortError'){$('routeStatus').textContent=e.message;notify(e.message,true);}}
  finally{$('routeRun').disabled=false;controller=null;}
 };
-
