@@ -12,7 +12,24 @@ import (
 )
 
 func registerDispatch(mux *http.ServeMux) {
+	mux.HandleFunc("POST /api/dispatch/route", handleRoute)
 	mux.HandleFunc("POST /api/dispatch/select", handleSelection)
+}
+
+func handleRoute(w http.ResponseWriter, r *http.Request) {
+	var req dispatch.RouteRequest
+	if err := decodeDecision(w, r, &req); err != nil {
+		writeError(w, 400, err.Error())
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 45*time.Second)
+	defer cancel()
+	result, err := dispatch.Route(ctx, req)
+	if err != nil {
+		writeError(w, 400, err.Error())
+		return
+	}
+	writeJSON(w, 200, result)
 }
 
 func decodeDecision(w http.ResponseWriter, r *http.Request, v any) error {

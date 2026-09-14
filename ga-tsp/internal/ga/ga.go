@@ -3,6 +3,7 @@
 package ga
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"math/rand"
@@ -98,13 +99,13 @@ func (p *Params) Normalize() error {
 
 // Generation 是一代进化的快照。
 type Generation struct {
-	Gen       int       `json:"gen"`
-	Best      float64   `json:"best"`      // 本代最短环游距离
-	Avg       float64   `json:"avg"`       // 本代平均距离
-	Worst     float64   `json:"worst"`     // 本代最长距离
-	Diversity float64   `json:"diversity"` // 种群多样性（0~1，独特个体占比）
-	BestTour    []int     `json:"bestTour"`    // 本代最优环游
-	SampleTours [][]int   `json:"sampleTours"` // 种群抽样（最优+若干个体），用于可视化种群分布
+	Gen         int     `json:"gen"`
+	Best        float64 `json:"best"`        // 本代最短环游距离
+	Avg         float64 `json:"avg"`         // 本代平均距离
+	Worst       float64 `json:"worst"`       // 本代最长距离
+	Diversity   float64 `json:"diversity"`   // 种群多样性（0~1，独特个体占比）
+	BestTour    []int   `json:"bestTour"`    // 本代最优环游
+	SampleTours [][]int `json:"sampleTours"` // 种群抽样（最优+若干个体），用于可视化种群分布
 }
 
 // Result 是一次完整进化的结果。
@@ -119,6 +120,14 @@ type Result struct {
 
 // Solve 运行遗传算法并返回逐代快照与最终结果。
 func Solve(inst *tsp.Instance, p Params) (Result, error) {
+	return SolveContext(context.Background(), inst, p)
+}
+
+// SolveContext permits cancellation between generations.
+func SolveContext(ctx context.Context, inst *tsp.Instance, p Params) (Result, error) {
+	if err := ctx.Err(); err != nil {
+		return Result{}, err
+	}
 	if err := p.Normalize(); err != nil {
 		return Result{}, err
 	}
@@ -143,6 +152,9 @@ func Solve(inst *tsp.Instance, p Params) (Result, error) {
 	}
 
 	for gen := 0; gen < p.Generations; gen++ {
+		if err := ctx.Err(); err != nil {
+			return Result{}, err
+		}
 		dist := make([]float64, p.Population)
 		sum := 0.0
 		for i, tour := range pop {
