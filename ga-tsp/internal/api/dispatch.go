@@ -12,6 +12,7 @@ import (
 )
 
 func registerDispatch(mux *http.ServeMux) {
+	mux.HandleFunc("POST /api/analysis/compare", handleCompare)
 	mux.HandleFunc("POST /api/dispatch/route", handleRoute)
 	mux.HandleFunc("POST /api/dispatch/select", handleSelection)
 }

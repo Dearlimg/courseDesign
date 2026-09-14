@@ -16,6 +16,10 @@ import (
 
 // Params 是 GA 求解参数。
 type Params struct {
+	crossSet       bool
+	mutationSet    bool
+	elitismSet     bool
+	seedSet        bool
 	Encoding       string  `json:"encoding"`       // permutation / random-key
 	Initialization string  `json:"initialization"` // random / mixed
 	Population     int     `json:"population"`     // 种群规模
@@ -33,6 +37,7 @@ type Params struct {
 // DefaultParams 返回推荐的默认参数（种子除外）。
 func DefaultParams() Params {
 	return Params{
+		crossSet: true, mutationSet: true, elitismSet: true,
 		Population:    200,
 		Generations:   500,
 		CrossoverRate: 0.9,
@@ -73,13 +78,13 @@ func (p *Params) Normalize() error {
 	if p.Generations == 0 {
 		p.Generations = d.Generations
 	}
-	if p.CrossoverRate == 0 {
+	if p.CrossoverRate == 0 && !p.crossSet {
 		p.CrossoverRate = d.CrossoverRate
 	}
-	if p.MutationRate == 0 {
+	if p.MutationRate == 0 && !p.mutationSet {
 		p.MutationRate = d.MutationRate
 	}
-	if p.Elitism == 0 {
+	if p.Elitism == 0 && !p.elitismSet {
 		p.Elitism = d.Elitism
 	}
 	if p.Selection == "" {
@@ -91,7 +96,7 @@ func (p *Params) Normalize() error {
 	if p.Mutation == "" {
 		p.Mutation = d.Mutation
 	}
-	if p.Seed == 0 {
+	if p.Seed == 0 && !p.seedSet {
 		p.Seed = time.Now().UnixNano()
 	}
 
