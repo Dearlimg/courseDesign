@@ -4,19 +4,19 @@
 const $ = (id) => document.getElementById(id);
 
 const COLORS = {
-  best: '#38bdf8',
-  avg: '#fbbf24',
-  optimal: '#22c55e',
-  diversity: '#a855f7',
-  grid: 'rgba(148, 163, 184, 0.14)',
-  axis: 'rgba(148, 163, 184, 0.45)',
-  text: '#94a3b8',
-  city: '#e2e8f0',
-  optimalTour: 'rgba(34, 197, 94, 0.45)',
-  cloud: 'rgba(125, 211, 252, 0.13)',
-  newEdge: '#4ade80',
+  best: '#0d9488',
+  avg: '#d99a29',
+  optimal: '#58a26a',
+  diversity: '#8b78bd',
+  grid: 'rgba(100, 125, 120, 0.12)',
+  axis: '#8c9d99',
+  text: '#738781',
+  city: '#44625b',
+  optimalTour: 'rgba(88, 162, 106, 0.4)',
+  cloud: 'rgba(13, 148, 136, 0.07)',
+  newEdge: '#61ab70',
   oldEdge: 'rgba(248, 113, 113, 0.6)',
-  scanPalette: ['#38bdf8', '#f472b6', '#fbbf24', '#22c55e', '#a855f7', '#f97316', '#14b8a6', '#e2e8f0'],
+  scanPalette: ['#0d9488', '#f472b6', '#d99a29', '#58a26a', '#8b78bd', '#f97316', '#14b8a6', '#44625b'],
 };
 
 const state = {
@@ -99,6 +99,10 @@ async function loadInstance() {
       });
     }
     resetRun();
+    state.scan = null;
+    drawScan();
+    $('scanTable').querySelector('tbody').innerHTML = '<tr><td colspan="5" class="empty-cell">运行对比实验后，各组结果将在这里呈现</td></tr>';
+    $('scanInfo').textContent = '未运行';
     const inst = state.instance;
     $('instInfo').textContent =
       `${inst.name} · ${inst.cities.length} 城 · ` +
@@ -354,7 +358,7 @@ function drawMap(gen, improved) {
     // 新增的边（绿色发光，沿当代回路绘制）
     ctx.save();
     ctx.shadowColor = 'rgba(74, 222, 128, 0.9)';
-    ctx.shadowBlur = 10;
+    ctx.shadowBlur = 0;
     ctx.strokeStyle = COLORS.newEdge;
     ctx.lineWidth = 2.8;
     strokeTourEdges(ctx, project, cities, tour,
@@ -366,7 +370,7 @@ function drawMap(gen, improved) {
   if (tour && tour.length) {
     ctx.save();
     ctx.shadowColor = 'rgba(56, 189, 248, 0.9)';
-    ctx.shadowBlur = 14;
+    ctx.shadowBlur = 0;
     strokeTour(ctx, project, cities, tour, COLORS.best, 2.6);
     ctx.restore();
   }
@@ -377,16 +381,16 @@ function drawMap(gen, improved) {
     const [x, y] = project(c);
     ctx.beginPath();
     ctx.arc(x, y, i === startIdx ? 6.5 : 4, 0, Math.PI * 2);
-    ctx.fillStyle = i === startIdx ? '#22d3ee' : '#0b1020';
+    ctx.fillStyle = i === startIdx ? '#0d9488' : '#ffffff';
     ctx.fill();
     ctx.lineWidth = 1.6;
-    ctx.strokeStyle = i === startIdx ? '#a5f3fc' : COLORS.city;
+    ctx.strokeStyle = i === startIdx ? '#14786d' : COLORS.city;
     ctx.stroke();
   });
 
   // 起点标注
   const [sx, sy] = project(cities[startIdx]);
-  ctx.fillStyle = '#a5f3fc';
+  ctx.fillStyle = '#14786d';
   ctx.font = '12px Consolas, monospace';
   ctx.fillText('起点', sx + 10, sy - 8);
 
@@ -413,7 +417,7 @@ function chartFrame(ctx, canvas, pad, yMin, yMax, xCount, xLabel) {
     ctx.moveTo(pad.l, y);
     ctx.lineTo(pad.l + W, y);
     ctx.stroke();
-    ctx.fillText(val.toFixed(0), 8, y + 4);
+    ctx.fillText((yMax <= 1.05 ? Math.round(val * 100) + '%' : val.toFixed(0)), 8, y + 4);
   }
   const ticks = Math.min(6, Math.max(2, xCount));
   for (let i = 0; i < ticks; i++) {
@@ -449,7 +453,7 @@ function strokeSeries(ctx, points, color, width) {
 
 function drawPlayhead(ctx, frame, x) {
   ctx.save();
-  ctx.strokeStyle = 'rgba(226, 232, 240, 0.55)';
+  ctx.strokeStyle = 'rgba(68, 98, 91, 0.5)';
   ctx.setLineDash([4, 4]);
   ctx.lineWidth = 1;
   ctx.beginPath();
@@ -519,7 +523,7 @@ function drawConvergence(upto) {
   ctx.arc(cx, cy, 4.5, 0, Math.PI * 2);
   ctx.fillStyle = COLORS.best;
   ctx.fill();
-  ctx.fillStyle = '#e0f2fe';
+  ctx.fillStyle = '#14786d';
   ctx.font = '12px Consolas, monospace';
   ctx.fillText(fmt(gens[n].best), Math.min(cx + 8, canvas.width - 90), cy - 8);
 }

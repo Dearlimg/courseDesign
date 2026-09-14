@@ -15,6 +15,7 @@ import (
 // NewMux 构建路由并注册所有 API 端点。
 func NewMux() *http.ServeMux {
 	mux := http.NewServeMux()
+	registerExperiments(mux)
 	mux.HandleFunc("GET /api/instances", handleListInstances)
 	mux.HandleFunc("GET /api/instances/{name}", handleGetInstance)
 	mux.HandleFunc("POST /api/instance/random", handleRandomInstance)
@@ -71,7 +72,7 @@ type instancePayload struct {
 // solveRequest 是 GA 求解请求。
 type solveRequest struct {
 	Instance instancePayload `json:"instance"`
-	Params   ga.Params      `json:"params"`
+	Params   ga.Params       `json:"params"`
 }
 
 // buildInstance 将请求负载转为 TSP 实例（忽略客户端传入的名称与已知最优）。
@@ -120,9 +121,9 @@ func handleSolve(w http.ResponseWriter, r *http.Request) {
 // scanRequest 是参数扫描请求：固定其他参数，仅变化一个参数观察收敛差异。
 type scanRequest struct {
 	Instance instancePayload `json:"instance"`
-	Params   ga.Params      `json:"params"`
-	Param    string         `json:"param"`
-	Values   []float64      `json:"values"`
+	Params   ga.Params       `json:"params"`
+	Param    string          `json:"param"`
+	Values   []float64       `json:"values"`
 }
 
 // 可扫描的参数及其设置方式。
