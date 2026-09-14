@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>遗传算法求解 TSP 旅行商问题 · 进化过程可视化</title>
+<link rel="stylesheet" href="style.css"><link rel="stylesheet" href="experiments.css">
+</head>
+<body>
+<nav class="site-nav" aria-label="主导航"><a class="brand" href="/tsp.html">进化实验室<span class="logo-dot">.</span></a><div class="nav-links"><a href="/tsp.html" aria-current="page">旅行商问题</a><a href="experiment.html?problem=knapsack">0/1 背包</a><a href="experiment.html?problem=cec">CEC 测试</a></div><span class="course-label">智能方法与系统设计</span></nav>
+<header class="topbar" id="workspace">
+  <div>
+    <div class="eyebrow">01 / 旅行商问题</div><h1>让每一代进化，<span>都有迹可循。</span></h1>
+    <p class="sub">用遗传算法探索旅行商问题，在路线演化与数据中观察最优解如何诞生。</p>
+  </div>
+  <div class="algo-badges">
+    <span class="badge">排列编码 · 组合优化</span>
+    <span class="badge">TSP 旅行商问题</span>
+  </div>
+</header>
+
+<main class="grid">
+  <!-- 城市地图与路线演化 -->
+  <section class="panel map-panel">
+    <div class="panel-head">
+      <div><div class="eyebrow">01 / 路线进化</div><h2>路线演化</h2></div>
+      <span id="mapInfo" class="tag">未求解</span>
+    </div>
+
+    <!-- 实时 HUD -->
+    <div class="hud">
+      <div class="hud-cell"><span class="hud-k">代次</span><span class="hud-v" id="hudGen">0/0</span></div>
+      <div class="hud-cell"><span class="hud-k">当代最优</span><span class="hud-v" id="hudBest">—</span></div>
+      <div class="hud-cell"><span class="hud-k">当代平均</span><span class="hud-v" id="hudAvg">—</span></div>
+      <div class="hud-cell"><span class="hud-k">多样性</span><span class="hud-v" id="hudDiv">—</span></div>
+      <div class="hud-cell"><span class="hud-k">最优差距</span><span class="hud-v" id="hudGap">—</span></div>
+      <div class="hud-cell"><span class="hud-k">较初始</span><span class="hud-v" id="hudImprove">—</span></div>
+    </div>
+
+    <div class="map-wrap" id="mapWrap">
+      <canvas id="mapCanvas" width="1000" height="570" role="img" aria-label="城市路线与逐代进化可视化"></canvas>
+      <div class="new-best" id="newBest"></div>
+      <div class="map-legend">
+        <span><i class="dot best"></i>当代最优回路</span>
+        <span><i class="dot cloud"></i>种群云（抽样个体）</span>
+        <span><i class="dot newedge"></i>本代新增边</span>
+        <span><i class="dot oldedge"></i>本代消失边</span>
+        <span><i class="dot optimal"></i>已知最优回路</span>
+      </div>
+    </div>
+
+    <div class="playback">
+      <button id="playBtn" class="btn primary" disabled>播放</button>
+      <button id="stepBtn" class="btn" disabled>单步 ▶</button>
+      <button id="resetBtn" class="btn" disabled>⏮ 首代</button>
+      <button id="jumpBestBtn" class="btn" disabled>跳收敛点</button>
+      <button id="jumpEndBtn" class="btn" disabled>⏭ 末代</button>
+      <input type="range" aria-label="进化代次" id="genSlider" class="slider" min="0" max="0" value="0" disabled>
+      <span id="genLabel" class="mono">第 0 / 0 代</span>
+      <label class="speed">速度
+        <input type="range" id="speedSlider" min="1" max="60" value="25">
+        <span id="speedLabel" class="mono">40ms/代</span>
+      </label>
+    </div>
+    <p class="kbd-hint">键盘：空格 播放/暂停 · ← → 单步 · Home 首代 · End 末代 · C 跳收敛点</p>
+  </section>
+
+  <!-- 控制面板 -->
+  <section class="panel config-panel">
+    <div class="panel-head"><div><div class="eyebrow">实验设置</div><h2>配置你的实验</h2></div><span class="tag">GA</span></div><h3>01 <span>问题实例</span></h3>
+    <div class="row">
+      <label>实例
+        <select id="instSelect">
+          <option value="att48">att48（附件1，48 城，最优 10628）</option>
+          <option value="random">随机欧氏实例</option>
+        </select>
+      </label>
+    </div>
+    <div class="row random-only">
+      <label>城市数 <input type="number" id="randN" value="30" min="4" max="500"></label>
+      <label>随机种子 <input type="number" id="randSeed" value="42"></label>
+      <button id="loadBtn" class="btn">加载实例</button>
+    </div>
+    <div class="row">
+      <button id="loadBuiltinBtn" class="btn">加载内置 att48</button>
+    </div>
+    <p id="instInfo" class="hint">请先加载实例</p>
+
+    <h3>02 <span>进化参数</span></h3>
+    <div class="row">
+      <label>种群规模 <input type="number" id="pPopulation" value="200" min="2" max="2000"></label>
+      <label>进化代数 <input type="number" id="pGenerations" value="500" min="1" max="10000"></label>
+    </div>
+    <div class="row">
+      <label>交叉概率 <input type="number" id="pCrossover" value="0.9" step="0.05" min="0" max="1"></label>
+      <label>变异概率 <input type="number" id="pMutation" value="0.05" step="0.01" min="0" max="1"></label>
+    </div>
+    <div class="row">
+      <label>精英个数 <input type="number" id="pElitism" value="2" min="0"></label>
+      <label>随机种子 <input type="number" id="pSeed" value="7"></label>
+    </div>
+    <div class="row">
+      <label>选择算子
+        <select id="pSelection">
+          <option value="tournament">锦标赛选择</option>
+          <option value="roulette">轮盘赌选择</option>
+        </select>
+      </label>
+      <label>交叉算子
+        <select id="pCrossoverOp">
+          <option value="ox">OX 顺序交叉</option>
+          <option value="pmx">PMX 部分匹配交叉</option>
+        </select>
+      </label>
+      <label>变异算子
+        <select id="pMutationOp">
+          <option value="inversion">逆转变异</option>
+          <option value="swap">交换变异</option>
+          <option value="insert">插入变异</option>
+        </select>
+      </label>
+    </div>
+    <div class="row">
+      <label class="check">
+        <input type="checkbox" id="pLocalSearch">
+        启用 2-opt 局部搜索（模因算法，会快速逼近局部最优）
+      </label>
+    </div>
+    <div class="row">
+      <button id="solveBtn" class="btn primary big" disabled>开始进化</button>
+    </div>
+    <p id="status" class="hint" role="status" aria-live="polite">选择实例后即可开始进化</p>
+  </section>
+
+  <!-- 收敛曲线 -->
+  <section class="panel convergence-panel" id="analysis">
+    <div class="panel-head">
+      <div><div class="eyebrow">02 / 收敛分析</div><h2>收敛趋势</h2></div>
+      <span class="legend-inline">
+        <i class="dot best"></i>最优 <i class="dot avg"></i>平均 <i class="dot optimal"></i>已知最优
+      </span>
+    </div>
+    <canvas id="convCanvas" width="900" height="330"></canvas>
+  </section>
+
+  <!-- 多样性与统计 -->
+  <section class="panel">
+    <div class="panel-head">
+      <div><div class="eyebrow">03 / 种群分析</div><h2>种群多样性</h2></div>
+      <span class="legend-inline"><i class="dot diversity"></i>独特个体占比</span>
+    </div>
+    <canvas id="divCanvas" width="520" height="230"></canvas>
+    <h3>实验结果 <span>结果摘要</span></h3>
+    <table class="stats-table" id="statsTable">
+      <tbody>
+        <tr><th>当前代最短路径</th><td id="sCurrent">—</td></tr>
+        <tr><th>最终最短路径</th><td id="sBest">—</td></tr>
+        <tr><th>已知最优 / Gap</th><td id="sOptimal">—</td></tr>
+        <tr><th>收敛代数</th><td id="sConv">—</td></tr>
+        <tr><th>初始改善幅度</th><td id="sImprove">—</td></tr>
+        <tr><th>求解耗时</th><td id="sTime">—</td></tr>
+        <tr><th>使用的参数</th><td id="sParams" class="small">—</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 参数对比实验 -->
+  <section class="panel span2" id="experiments">
+    <div class="panel-head">
+      <div><div class="eyebrow">04 / 参数对比</div><h2>改变参数，发现更好的解</h2></div>
+      <span id="scanInfo" class="tag">未运行</span>
+    </div>
+    <p class="section-desc">固定同一随机种子，每次只调整一个参数，比较不同配置的收敛速度与解的质量。</p>
+    <div class="row">
+      <label>扫描参数
+        <select id="scanParam">
+          <option value="mutationRate">变异概率</option>
+          <option value="crossoverRate">交叉概率</option>
+          <option value="population">种群规模</option>
+          <option value="elitism">精英个数</option>
+        </select>
+      </label>
+      <label class="grow">取值（逗号分隔，最多 8 组）
+        <input type="text" id="scanValues" value="0.005, 0.02, 0.08, 0.2">
+      </label>
+      <button id="scanBtn" class="btn" disabled>运行对比实验</button>
+    </div>
+    <canvas id="scanCanvas" width="1100" height="340"></canvas>
+    <div class="table-scroll"><table class="stats-table" id="scanTable">
+      <thead>
+        <tr><th>参数组</th><th>最终最短路径</th><th>收敛代数</th><th>耗时(ms)</th><th>最优差距</th></tr>
+      </thead>
+      <tbody><tr><td colspan="5" class="empty-cell">运行对比实验后，各组结果将在这里呈现</td></tr></tbody>
+    </table></div>
+  </section>
+</main>
+
+<footer class="foot">
+  <span class="footer-brand">进化实验室</span><span>初始种群 → 适应度评估 → 选择 → 交叉 → 变异 → 精英保留 → 下一代</span>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
