@@ -22,6 +22,9 @@ type Params struct {
 	Crossover      string  `json:"crossover"`
 	Mutation       string  `json:"mutation"`
 	Initialization string  `json:"initialization"`
+	// GreedyRepair 仅对背包生效：true=超重时按价值密度升序剔除物品（默认行为）；
+	// false=不修复，超重解直接判 0 适应度，让 GA 自行探索可行解（验证 DP 无影响的"原始 GA"模式）。
+	GreedyRepair bool `json:"greedyRepair"`
 }
 
 func (p Params) Validate(kind string) error {

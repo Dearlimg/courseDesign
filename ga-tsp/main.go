@@ -5,6 +5,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"gatsp/internal/api"
@@ -14,12 +15,16 @@ func main() {
 	mux := api.NewMux()
 	mux.Handle("/", http.FileServer(http.Dir("web")))
 
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8081"
+	}
 	srv := &http.Server{
-		Addr:         ":8081",
+		Addr:         ":" + port,
 		Handler:      mux,
 		ReadTimeout:  30 * time.Second,
 		WriteTimeout: 120 * time.Second, // 参数扫描请求耗时较长
 	}
-	log.Println("GA-TSP 系统已启动: http://localhost:8081")
+	log.Printf("GA-TSP 系统已启动: http://localhost:%s", port)
 	log.Fatal(srv.ListenAndServe())
 }

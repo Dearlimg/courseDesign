@@ -75,7 +75,7 @@ func SolveKnapsack(ctx context.Context, k Knapsack, params Params) (Result, erro
 	if err := k.Validate(); err != nil {
 		return Result{}, err
 	}
-	// 按价值密度升序剔除超重物品。修复仅保证可行性，不注入动态规划最优解。
+	// 按价值密度升序剔除超重物品。
 	order := make([]int, len(k.Items))
 	for i := range order {
 		order[i] = i
@@ -84,24 +84,47 @@ func SolveKnapsack(ctx context.Context, k Knapsack, params Params) (Result, erro
 		a, b := k.Items[order[i]], k.Items[order[j]]
 		return a.Value*b.Weight < b.Value*a.Weight
 	})
-	repair := func(genes []float64) {
-		var weight int
-		for i, g := range genes {
-			if g == 1 {
-				weight += k.Items[i].Weight
+
+	var repair func([]float64)
+	var evaluate func([]float64) float64
+	if params.GreedyRepair {
+		// 开启贪心修复：超重时按价值密度升序剔除物品（拉马克式先验引导）。
+		repair = func(genes []float64) {
+			var weight int
+			for i, g := range genes {
+				if g == 1 {
+					weight += k.Items[i].Weight
+				}
+			}
+			for _, i := range order {
+				if weight <= k.Capacity {
+					break
+				}
+				if genes[i] == 1 {
+					genes[i] = 0
+					weight -= k.Items[i].Weight
+				}
 			}
 		}
-		for _, i := range order {
-			if weight <= k.Capacity {
-				break
+		evaluate = k.value
+	} else {
+		// 关闭贪心修复：不修复，超重解直接判 0 适应度（"原始 GA"模式，验证 DP 无影响）。
+		repair = func([]float64) {} // noop：完全交给选择压力淘汰超重解
+		evaluate = func(genes []float64) float64 {
+			var total, weight int
+			for i, v := range genes {
+				if v == 1 {
+					total += k.Items[i].Value
+					weight += k.Items[i].Weight
+				}
 			}
-			if genes[i] == 1 {
-				genes[i] = 0
-				weight -= k.Items[i].Weight
+			if weight > k.Capacity {
+				return 0
 			}
+			return float64(total)
 		}
 	}
 	task := problem{kind: "knapsack", size: len(k.Items), lower: 0, upper: 1,
-		optimal: float64(k.ExactValue()), evaluate: k.value, repair: repair}
+		optimal: float64(k.ExactValue()), evaluate: evaluate, repair: repair}
 	return run(ctx, task, params)
 }

@@ -13,6 +13,8 @@ func testParams(kind string) Params {
 	if kind == "cec" {
 		p.Crossover = "blend"
 		p.Mutation = "gaussian"
+	} else {
+		p.GreedyRepair = true // 背包测试默认开启贪心修复，保持现有测试期望
 	}
 	return p
 }
@@ -92,6 +94,31 @@ func TestKnapsackAgainstEnumeration(t *testing.T) {
 				}
 			}
 		}
+	}
+}
+
+func TestKnapsackWithoutGreedyRepairIsHarder(t *testing.T) {
+	// 关闭贪心修复后，超重解适应度=0；GA 必须自己找到可行的高质量解，
+	// 收敛速度应明显慢于开启贪心修复（验证 DP 未注入、收敛先验来自修复函数）。
+	k, _ := RandomKnapsack(20, 7)
+	p := testParams("knapsack")
+	p.Generations = 200
+	p.GreedyRepair = true
+	resOn, _ := SolveKnapsack(context.Background(), k, p)
+	p.GreedyRepair = false
+	resOff, _ := SolveKnapsack(context.Background(), k, p)
+	// 关闭贪心修复后仍应改进初始种群（GA 能找到可行解）
+	if resOff.Best <= 0 {
+		t.Fatalf("关闭贪心修复后 GA 应至少找到非零可行解，实际 Best=%v", resOff.Best)
+	}
+	// 关闭贪心修复的最终最优不应超过开启贪心修复（贪心修复是性能上界）
+	if resOff.Best > resOn.Best+1e-9 {
+		t.Fatalf("关闭贪心修复不应优于开启：off=%v on=%v", resOff.Best, resOn.Best)
+	}
+	// 关闭贪心修复应显著更难：收敛代数更晚或最终值更差
+	if resOff.Best >= resOn.Best-1e-9 && resOff.ConvergedGen <= resOn.ConvergedGen {
+		t.Fatalf("关闭贪心修复应更难收敛：off(Best=%v,Gen=%v) on(Best=%v,Gen=%v)",
+			resOff.Best, resOff.ConvergedGen, resOn.Best, resOn.ConvergedGen)
 	}
 }
 

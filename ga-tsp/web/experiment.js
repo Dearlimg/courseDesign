@@ -54,7 +54,7 @@ function setup() {
     $('goal').textContent = '最小化目标函数值'; $('encoding').textContent = '实数编码 · CEC 2005 基准子集';
     $('visualTitle').textContent = '函数地形与种群轨迹'; $('bestLabel').textContent = '当代最优值'; $('auxLabel').textContent = '最优误差';
     $('mutationRate').value = '0.1';
-    $('curveNote').textContent = '纵轴为目标函数值（越小越好）；使用原始值而非误差对数。历史最优与平均值基于全部维度计算。';
+    $('curveNote').textContent = '纵轴为目标函数值（越小越好）；使用原始值而非误差对数。实线为当代最优与种群平均，虚线为历史最优（单调累积进度）。所有曲线基于全部维度计算。';
     $('method').textContent = '实数编码直接表示各维坐标。初始种群可采用独立随机或分层均匀抽样；锦标赛与排序轮盘赌决定亲本；算术或混合交叉产生后代，高斯或随机重置变异增加探索能力。越界坐标截断回合法范围，精英保留优秀个体。变异概率作用于每个基因。';
     $('reference').innerHTML = '采用 CEC 2005 的 F1、F2、F9 原始移位定义及偏置；二维用于教学，提供 10、30、50 维实验。这里不是完整竞赛测试套件。定义参考 Suganthan 等（2005）《实参数优化问题定义与评价准则》，<a href="https://github.com/thieu1995/opfunu/tree/master/opfunu/cec_based/data_2005" target="_blank" rel="noopener">移位数据来源</a>。';
   } else {
@@ -110,6 +110,7 @@ function request() {
   const params = {};
   ['population', 'generations', 'crossoverRate', 'mutationRate', 'elitism', 'seed'].forEach(id => { params[id] = Number($(id).value); });
   ['selection', 'initialization', 'crossover', 'mutation'].forEach(id => { params[id] = $(id).value; });
+  params.greedyRepair = $('greedyRepair').checked;
   if (Object.values(params).some(v => typeof v === 'number' && !Number.isFinite(v))) throw new Error('请填写有效参数');
   if (!state.instance) throw new Error('请先加载问题实例');
   if (isCEC) {
@@ -202,6 +203,34 @@ function chart(id, series, cursor = null) {
   if (cursor !== null) { ctx.setLineDash([4, 4]); ctx.strokeStyle = '#83988a'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x(cursor), top); ctx.lineTo(x(cursor), top + height); ctx.stroke(); ctx.setLineDash([]); }
   ctx.fillText('进化代数', canvas.width - 75, canvas.height - 5);
 }
+// drawCurve 专门用于「02 / 收敛分析」：实线画当代最优与平均（反映 GA 探索过程），
+// 虚线画历史最优作为参考（数学上单调，仅显示进度），并用 cursor 标记当前回放代次。
+function drawCurve(id, best, avg, soFar, cursor = null) {
+  const canvas = $(id), ctx = canvas.getContext('2d'); ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const all = [...best, ...avg, ...soFar], count = best.length;
+  if (!all.length) return;
+  let lo = Math.min(...all), hi = Math.max(...all); const margin = (hi - lo) * .1 || Math.max(1, Math.abs(hi) * .01); lo -= margin; hi += margin;
+  const left = 90, top = 25, width = canvas.width - 115, height = canvas.height - 68;
+  const x = i => left + i / Math.max(1, count - 1) * width, y = v => top + (hi - v) / (hi - lo) * height;
+  ctx.font = '12px "Microsoft YaHei",sans-serif'; ctx.fillStyle = '#809180'; ctx.lineWidth = 1;
+  for (let i = 0; i < 5; i++) {
+    const yy = top + height * i / 4, value = hi - (hi - lo) * i / 4;
+    ctx.strokeStyle = '#e5ebe4'; ctx.beginPath(); ctx.moveTo(left, yy); ctx.lineTo(left + width, yy); ctx.stroke();
+    ctx.fillText(Math.abs(value) > 99999 ? value.toExponential(1) : fmt(value), 4, yy + 4);
+    ctx.fillText(String(Math.round((count - 1) * i / 4)), left + width * i / 4 - 6, top + height + 23);
+  }
+  // 历史最优（虚线参考，单调累积进度）
+  ctx.save(); ctx.setLineDash([6, 5]); ctx.strokeStyle = colors[3]; ctx.lineWidth = 1.8;
+  ctx.beginPath(); soFar.forEach((v, i) => { i ? ctx.lineTo(x(i), y(v)) : ctx.moveTo(x(i), y(v)); }); ctx.stroke(); ctx.restore();
+  // 当代最优（实线，主曲线）
+  ctx.strokeStyle = colors[0]; ctx.lineWidth = 2.3; ctx.beginPath();
+  best.forEach((v, i) => { i ? ctx.lineTo(x(i), y(v)) : ctx.moveTo(x(i), y(v)); }); ctx.stroke();
+  // 种群平均（实线，次曲线）
+  ctx.strokeStyle = colors[1]; ctx.lineWidth = 2.3; ctx.beginPath();
+  avg.forEach((v, i) => { i ? ctx.lineTo(x(i), y(v)) : ctx.moveTo(x(i), y(v)); }); ctx.stroke();
+  if (cursor !== null) { ctx.setLineDash([4, 4]); ctx.strokeStyle = '#83988a'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x(cursor), top); ctx.lineTo(x(cursor), top + height); ctx.stroke(); ctx.setLineDash([]); }
+  ctx.fillText('进化代数', canvas.width - 75, canvas.height - 5);
+}
 function setGen(gen) {
   if (!state.result) return;
   state.gen = Math.max(0, Math.min(gen, state.result.generations.length - 1));
@@ -210,7 +239,11 @@ function setGen(gen) {
   $('metricBest').textContent = fmt(g.best); $('metricAvg').textContent = fmt(g.average);
   $('runTag').textContent = `第 ${state.gen} 代`;
   if (isCEC) { $('metricAux').textContent = fmt(Math.abs(g.best - state.result.optimal)); drawLandscape(g); } else drawBag(g.genes);
-  chart('curve', [{ values: state.result.generations.map(g => g.bestSoFar), color: colors[0] }, { values: state.result.generations.map(g => g.average), color: colors[1] }], state.gen);
+  // 主曲线展示当代最优（能看到探索-波动-收敛过程），叠加历史最优作为虚线参考
+  const bestCur = state.result.generations.map(g => g.best);
+  const avgCur = state.result.generations.map(g => g.average);
+  const soFarCur = state.result.generations.map(g => g.bestSoFar);
+  drawCurve('curve', bestCur, avgCur, soFarCur, state.gen);
 }
 function play() {
   if (!state.result) return;
