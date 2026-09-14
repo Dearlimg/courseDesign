@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>迷宫求解系统 - BFS / DFS 最短通路可视化</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>迷宫求解系统</h1>
+  <p class="subtitle">深度优先（DFS）与广度优先（BFS）算法求解迷宫最短通路 · 课程设计题目十二</p>
+</header>
+
+<main>
+  <section class="maze-panel">
+    <canvas id="mazeCanvas" width="640" height="640"></canvas>
+    <div class="legend">
+      <span><i class="sw wall"></i>墙壁</span>
+      <span><i class="sw open"></i>通路</span>
+      <span><i class="sw start"></i>起点</span>
+      <span><i class="sw end"></i>终点</span>
+      <span><i class="sw visited"></i>已探索</span>
+      <span><i class="sw dead"></i>死路(回溯)</span>
+      <span><i class="sw path"></i>最短路径</span>
+    </div>
+    <p class="hint">提示：点击画布中的格子可手动切换墙 / 通路（起点、终点除外）</p>
+  </section>
+
+  <aside class="control-panel">
+    <fieldset>
+      <legend>迷宫初始化</legend>
+      <div class="row">
+        <label>列数(宽) <input type="number" id="cols" min="5" max="50" value="15"></label>
+        <label>行数(高) <input type="number" id="rows" min="5" max="50" value="15"></label>
+      </div>
+      <div class="row">
+        <label class="full">墙密度 <input type="range" id="density" min="0" max="0.6" step="0.05" value="0.3">
+          <span id="densityVal">0.30</span></label>
+      </div>
+      <div class="row">
+        <button id="btnGenerate" class="primary">随机生成</button>
+        <button id="btnPreset">题目示例 (5×5)</button>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>求解算法</legend>
+      <div class="row algo">
+        <label><input type="radio" name="algo" value="bfs" checked> 广度优先 BFS（最短路径）</label>
+        <label><input type="radio" name="algo" value="dfs"> 深度优先 DFS（对比用）</label>
+      </div>
+      <div class="row">
+        <button id="btnSolve" class="primary">开始求解</button>
+        <button id="btnCompare">双算法对比</button>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>探索过程回放</legend>
+      <div class="row">
+        <button id="btnPlay" disabled>播放</button>
+        <button id="btnStep" disabled>单步</button>
+        <button id="btnReset" disabled>重置</button>
+      </div>
+      <div class="row">
+        <label class="full">动画速度
+          <input type="range" id="speed" min="10" max="300" step="10" value="80">
+          <span id="speedVal">80ms/步</span>
+        </label>
+      </div>
+      <div class="progress"><span id="progressText">尚未求解</span>
+        <div class="bar"><div id="progressBar"></div></div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>结果统计</legend>
+      <table id="statsTable">
+        <thead>
+          <tr><th>算法</th><th>结果</th><th>路径长度(步)</th><th>访问格子数</th><th>耗时(ms)</th></tr>
+        </thead>
+        <tbody>
+          <tr id="statBfs"><td>BFS</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+          <tr id="statDfs"><td>DFS</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+        </tbody>
+      </table>
+      <p id="conclusion" class="conclusion"></p>
+    </fieldset>
+  </aside>
+</main>
+
+<footer>《智能方法与系统设计》课程设计 · 题目十二 · Go + Web 前后端分离</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
