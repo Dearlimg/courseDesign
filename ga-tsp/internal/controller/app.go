@@ -43,6 +43,7 @@ func registerBusiness(r *gin.Engine, svc *logic.AuthService) {
 	api.POST("/solve", handleSolve)
 	api.POST("/scan", handleScan)
 	registerExperiments(api)
+	registerCampus(api)
 	api.POST("/analysis/compare", handleCompare)
 	api.POST("/dispatch/route", handleRoute)
 	api.POST("/dispatch/select", handleSelection)
