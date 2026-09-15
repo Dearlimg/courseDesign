@@ -66,7 +66,7 @@ func noRouteGuard(svc *logic.AuthService, staticDir string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		p := c.Request.URL.Path
 		isAPI := strings.HasPrefix(p, "/api/")
-		isPage := p == "/" || p == "/index.html" || p == "/tsp.html" || p == "/experiment.html"
+		isPage := p == "/" || p == "/index.html" || p == "/tsp.html" || p == "/experiment.html" || p == "/legacy.html"
 		if isAPI || isPage {
 			ctx, cancel := context.WithTimeout(c.Request.Context(), 4*time.Second)
 			_, err := svc.User(ctx, requestToken(c.Request))

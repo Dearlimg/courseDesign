@@ -1,0 +1,17 @@
+.campus-controls{display:flex;align-items:end;gap:16px;flex-wrap:wrap;margin:20px 0}
+.campus-controls label{display:flex;flex-direction:column;gap:8px;font-size:12px;color:#77715f;min-width:140px;flex:1}
+.campus-controls input,.campus-controls select{width:100%;min-height:42px}.campus-controls button{min-height:42px}
+.campus-table{max-height:390px;overflow:auto;margin:20px 0}.campus-table thead{position:sticky;top:0;background:#fffdf7;z-index:1}
+.campus-table input{min-width:80px}.campus-table select{min-width:130px}.campus-table tr.selected{background:#fff6cf}
+.campus-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:18px 0}.campus-metrics .stat{padding:20px;background:#faf6e7;border-radius:12px}
+.campus-metrics .stat strong{display:block;font-size:25px;margin:9px 0}.campus-metrics .stat small{display:block;color:#77715f}
+.chosen-orders{display:flex;gap:8px;flex-wrap:wrap}.chosen-orders span{padding:8px 12px;border-radius:8px;background:#fff1b4;font-size:12px}
+.campus-route{display:grid;grid-template-columns:minmax(0,2fr) minmax(220px,1fr);gap:28px;align-items:start}
+#campusMap{display:block;width:100%;background:#f9f7ee;border:1px solid #eee7d8;border-radius:16px}#campusMap text{font:19px 'Microsoft YaHei',sans-serif;fill:#4a473d}
+#campusMap .road{stroke:#dedbcf;stroke-width:13;stroke-linecap:round}#campusMap .route-line{stroke:#c59708;stroke-width:5;fill:none;stroke-linejoin:round;stroke-linecap:round}
+#campusMap .place{stroke:#b1ad9c;stroke-width:3;fill:white}#campusMap .active{fill:#ffcf35;stroke:#9f7700}#campusMap .depot{fill:#39382e;stroke:#39382e}
+.legend{display:flex;gap:18px;flex-wrap:wrap;font-size:11px;color:#857c60;margin:12px 0}#stopList{padding-left:22px}#stopList li{padding:9px 0;border-bottom:1px solid #eee7d8;line-height:1.8}
+#curve{width:100%;max-height:260px;background:#fffcf4;border-radius:10px}#comparisonRuns,#excludedOrders{max-height:320px;overflow:auto;font-size:12px;line-height:1.8}
+#planStatus.stale{color:#a35b19;background:#fff3df;padding:12px;border-radius:8px}.sidebar-bottom a{color:#e0c270}.links{display:flex;gap:20px;flex-wrap:wrap}
+@media(max-width:1100px){.campus-route{grid-template-columns:1fr}.campus-metrics{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:700px){.campus-controls{gap:10px}.campus-controls label{min-width:125px}.campus-metrics .stat strong{font-size:21px}.campus-table{max-height:320px}.campus-route{gap:12px}}
