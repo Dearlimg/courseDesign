@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"simple_tuan/internal/config"
 	"golang.org/x/crypto/bcrypt"
+	"simple_tuan/internal/config"
 )
 
 // This opt-in test touches only its generated account and exact Redis keys.

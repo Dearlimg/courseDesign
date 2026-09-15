@@ -1,4 +1,4 @@
-package dispatch
+package logic
 
 import (
 	"context"
@@ -6,32 +6,12 @@ import (
 	"slices"
 	"strings"
 
+	"simple_tuan/internal/models"
 	"simple_tuan/pkg/ga"
 	"simple_tuan/pkg/tsp"
 )
 
-type Point struct {
-	Name     string   `json:"name"`
-	X        float64  `json:"x"`
-	Y        float64  `json:"y"`
-	OrderIDs []string `json:"orderIds,omitempty"`
-}
-type RouteRequest struct {
-	Depot  Point      `json:"depot"`
-	Points []Point    `json:"points"`
-	Params *ga.Params `json:"params,omitempty"`
-}
-type RouteResult struct {
-	Stops            []Point   `json:"stops"`
-	Tour             []int     `json:"tour"`
-	Distance         float64   `json:"distance"`
-	BaselineDistance float64   `json:"baselineDistance"`
-	Improvement      float64   `json:"improvement"`
-	UsedBaseline     bool      `json:"usedBaseline"`
-	Method           string    `json:"method"`
-	Evolution        ga.Result `json:"evolution"`
-}
-
+// DefaultRouteParams 返回配送路线的默认 GA 参数。
 func DefaultRouteParams() ga.Params {
 	p := ga.DefaultParams()
 	p.Population = 100
@@ -41,13 +21,13 @@ func DefaultRouteParams() ga.Params {
 }
 
 // RouteInstance merges equal coordinates, including deliveries at the depot.
-func RouteInstance(req RouteRequest) (*tsp.Instance, []Point, error) {
+func RouteInstance(req models.RouteRequest) (*tsp.Instance, []models.Point, error) {
 	if len(req.Points) == 0 || len(req.Points) > 100 {
-		return nil, []Point{}, fmt.Errorf("送达点数量须为 1～100")
+		return nil, []models.Point{}, fmt.Errorf("送达点数量须为 1～100")
 	}
-	stops := []Point{}
+	stops := []models.Point{}
 	indices := make(map[[2]float64]int)
-	points := append([]Point{req.Depot}, req.Points...)
+	points := append([]models.Point{req.Depot}, req.Points...)
 	for _, p := range points {
 		if strings.TrimSpace(p.Name) == "" || len([]rune(p.Name)) > 100 {
 			return nil, stops, fmt.Errorf("地点名称不能为空或过长")
@@ -74,8 +54,9 @@ func RouteInstance(req RouteRequest) (*tsp.Instance, []Point, error) {
 	return &tsp.Instance{Name: "园区配送", EdgeType: "euclid", Cities: cities}, stops, nil
 }
 
-func Route(ctx context.Context, req RouteRequest) (RouteResult, error) {
-	result := RouteResult{Stops: []Point{}, Tour: []int{}, Evolution: ga.Result{Generations: []ga.Generation{}, BestTour: []int{}}}
+// Route 规划从取餐点出发、送达后返站的闭合配送路线。
+func Route(ctx context.Context, req models.RouteRequest) (models.RouteResult, error) {
+	result := models.RouteResult{Stops: []models.Point{}, Tour: []int{}, Evolution: ga.Result{Generations: []ga.Generation{}, BestTour: []int{}}}
 	if err := ctx.Err(); err != nil {
 		return result, err
 	}

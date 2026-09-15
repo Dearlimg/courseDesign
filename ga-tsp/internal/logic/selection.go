@@ -1,5 +1,5 @@
-// Package dispatch maps delivery decisions to optimization models.
-package dispatch
+// Package logic 承载业务编排与事务边界，零 HTTP 依赖。
+package logic
 
 import (
 	"context"
@@ -7,19 +7,12 @@ import (
 	"math"
 	"strings"
 
+	"simple_tuan/internal/models"
 	"simple_tuan/pkg/optimization"
 )
 
-type Order struct {
-	ID     string  `json:"id"`
-	Name   string  `json:"name"`
-	X      float64 `json:"x"`
-	Y      float64 `json:"y"`
-	Load   int     `json:"load"`
-	Income int     `json:"income"`
-}
-
-func ValidateOrders(orders []Order) error {
+// ValidateOrders 校验候选订单的完整性与合法性。
+func ValidateOrders(orders []models.Order) error {
 	if len(orders) > 100 {
 		return fmt.Errorf("最多支持 100 笔订单")
 	}
@@ -50,6 +43,7 @@ func validCoordinate(v float64) bool {
 	return !math.IsNaN(v) && !math.IsInf(v, 0) && v >= 0 && v <= 1000
 }
 
+// DefaultSelectionParams 返回智能接单的默认 GA 参数。
 func DefaultSelectionParams() optimization.Params {
 	return optimization.Params{
 		Population: 100, Generations: 200, CrossoverRate: 0.9, MutationRate: 0.03,
@@ -58,30 +52,10 @@ func DefaultSelectionParams() optimization.Params {
 	}
 }
 
-type SelectionRequest struct {
-	Orders   []Order              `json:"orders"`
-	Capacity int                  `json:"capacity"`
-	Params   *optimization.Params `json:"params,omitempty"`
-}
-type ExcludedOrder struct {
-	ID     string `json:"id"`
-	Reason string `json:"reason"`
-}
-type SelectionResult struct {
-	Selected        []Order             `json:"selected"`
-	Eligible        []Order             `json:"eligible"`
-	Excluded        []ExcludedOrder     `json:"excluded"`
-	Load            int                 `json:"load"`
-	Income          int                 `json:"income"`
-	OptimalIncome   int                 `json:"optimalIncome"`
-	VerifiedOptimal bool                `json:"verifiedOptimal"`
-	Method          string              `json:"method"`
-	Evolution       optimization.Result `json:"evolution"`
-}
-
-func Select(ctx context.Context, req SelectionRequest) (SelectionResult, error) {
-	result := SelectionResult{
-		Selected: []Order{}, Eligible: []Order{}, Excluded: []ExcludedOrder{},
+// Select 在餐箱容量内选择预计配送收入更高的订单组合。
+func Select(ctx context.Context, req models.SelectionRequest) (models.SelectionResult, error) {
+	result := models.SelectionResult{
+		Selected: []models.Order{}, Eligible: []models.Order{}, Excluded: []models.ExcludedOrder{},
 		Evolution: optimization.Result{Generations: []optimization.Generation{}, Genes: []float64{}},
 	}
 	if err := ctx.Err(); err != nil {
@@ -104,7 +78,7 @@ func Select(ctx context.Context, req SelectionRequest) (SelectionResult, error) 
 	bag := optimization.Knapsack{Capacity: req.Capacity, Items: []optimization.Item{}}
 	for _, o := range req.Orders {
 		if o.Load > req.Capacity {
-			result.Excluded = append(result.Excluded, ExcludedOrder{ID: o.ID, Reason: "该订单超过本趟容量"})
+			result.Excluded = append(result.Excluded, models.ExcludedOrder{ID: o.ID, Reason: "该订单超过本趟容量"})
 			continue
 		}
 		result.Eligible = append(result.Eligible, o)
@@ -141,7 +115,7 @@ func Select(ctx context.Context, req SelectionRequest) (SelectionResult, error) 
 				result.Load += o.Load
 				result.Income += o.Income
 			} else {
-				result.Excluded = append(result.Excluded, ExcludedOrder{ID: o.ID, Reason: "未入选当前推荐组合"})
+				result.Excluded = append(result.Excluded, models.ExcludedOrder{ID: o.ID, Reason: "未入选当前推荐组合"})
 			}
 		}
 	}

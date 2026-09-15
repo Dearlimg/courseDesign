@@ -8,7 +8,8 @@ import (
 	"net/http"
 	"time"
 
-	"simple_tuan/internal/dispatch"
+	"simple_tuan/internal/logic"
+	"simple_tuan/internal/models"
 )
 
 func registerDispatch(mux *http.ServeMux) {
@@ -18,14 +19,14 @@ func registerDispatch(mux *http.ServeMux) {
 }
 
 func handleRoute(w http.ResponseWriter, r *http.Request) {
-	var req dispatch.RouteRequest
+	var req models.RouteRequest
 	if err := decodeDecision(w, r, &req); err != nil {
 		writeError(w, 400, err.Error())
 		return
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 45*time.Second)
 	defer cancel()
-	result, err := dispatch.Route(ctx, req)
+	result, err := logic.Route(ctx, req)
 	if err != nil {
 		writeError(w, 400, err.Error())
 		return
@@ -47,14 +48,14 @@ func decodeDecision(w http.ResponseWriter, r *http.Request, v any) error {
 }
 
 func handleSelection(w http.ResponseWriter, r *http.Request) {
-	var req dispatch.SelectionRequest
+	var req models.SelectionRequest
 	if err := decodeDecision(w, r, &req); err != nil {
 		writeError(w, 400, err.Error())
 		return
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 45*time.Second)
 	defer cancel()
-	result, err := dispatch.Select(ctx, req)
+	result, err := logic.Select(ctx, req)
 	if err != nil {
 		writeError(w, 400, err.Error())
 		return

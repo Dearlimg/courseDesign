@@ -121,14 +121,14 @@ func smallParams() map[string]any {
 	return map[string]any{
 		"population":  30,
 		"generations": 40,
-		"seed":       7,
+		"seed":        7,
 	}
 }
 
 func TestSolveEndpoint(t *testing.T) {
 	rec := doJSON(t, http.MethodPost, "/api/solve", map[string]any{
 		"instance": smallInstance(),
-		"params":    smallParams(),
+		"params":   smallParams(),
 	})
 	if rec.Code != http.StatusOK {
 		t.Fatalf("状态码应为 200，实际 %d: %s", rec.Code, rec.Body.String())
@@ -180,9 +180,9 @@ func TestSolveEndpointRejectsBadInstance(t *testing.T) {
 func TestScanEndpoint(t *testing.T) {
 	rec := doJSON(t, http.MethodPost, "/api/scan", map[string]any{
 		"instance": smallInstance(),
-		"params":    smallParams(),
-		"param":     "mutationRate",
-		"values":    []float64{0.01, 0.1},
+		"params":   smallParams(),
+		"param":    "mutationRate",
+		"values":   []float64{0.01, 0.1},
 	})
 	if rec.Code != http.StatusOK {
 		t.Fatalf("状态码应为 200，实际 %d: %s", rec.Code, rec.Body.String())

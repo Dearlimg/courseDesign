@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"simple_tuan/internal/config"
+	"simple_tuan/internal/models"
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/redis/go-redis/v9"
@@ -23,21 +24,13 @@ var (
 	ErrDuplicate = errors.New("duplicate account")
 )
 
-type User struct {
-	ID       int64  `json:"id"`
-	Username string `json:"username"`
-}
-type Account struct {
-	User
-	PasswordHash []byte
-}
 type Users interface {
-	Create(context.Context, string, []byte) (User, error)
-	Find(context.Context, string) (Account, error)
+	Create(context.Context, string, []byte) (models.User, error)
+	Find(context.Context, string) (models.Account, error)
 }
 type Sessions interface {
-	Put(context.Context, string, User, time.Duration) error
-	Get(context.Context, string) (User, error)
+	Put(context.Context, string, models.User, time.Duration) error
+	Get(context.Context, string) (models.User, error)
 	Delete(context.Context, string) error
 	Allow(context.Context, string, int, time.Duration) (bool, error)
 }
@@ -117,20 +110,20 @@ func safeConnectionError(err error) string {
 func (u *MySQLUsers) Close() error    { return u.db.Close() }
 func (s *RedisSessions) Close() error { return s.client.Close() }
 
-func (u *MySQLUsers) Create(ctx context.Context, name string, hash []byte) (User, error) {
+func (u *MySQLUsers) Create(ctx context.Context, name string, hash []byte) (models.User, error) {
 	result, err := u.db.ExecContext(ctx, "INSERT INTO qiji_users (username,password_hash) VALUES (?,?)", name, hash)
 	if err != nil {
 		var driverErr *mysql.MySQLError
 		if errors.As(err, &driverErr) && driverErr.Number == 1062 {
-			return User{}, ErrDuplicate
+			return models.User{}, ErrDuplicate
 		}
-		return User{}, err
+		return models.User{}, err
 	}
 	id, err := result.LastInsertId()
-	return User{ID: id, Username: name}, err
+	return models.User{ID: id, Username: name}, err
 }
-func (u *MySQLUsers) Find(ctx context.Context, name string) (Account, error) {
-	var a Account
+func (u *MySQLUsers) Find(ctx context.Context, name string) (models.Account, error) {
+	var a models.Account
 	err := u.db.QueryRowContext(ctx, "SELECT id,username,password_hash FROM qiji_users WHERE username=?", name).
 		Scan(&a.ID, &a.Username, &a.PasswordHash)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -143,15 +136,15 @@ func digest(value string) string {
 	return hex.EncodeToString(sum[:])
 }
 func sessionKey(token string) string { return "qiji:session:v1:" + digest(token) }
-func (s *RedisSessions) Put(ctx context.Context, token string, u User, ttl time.Duration) error {
+func (s *RedisSessions) Put(ctx context.Context, token string, u models.User, ttl time.Duration) error {
 	body, err := json.Marshal(u)
 	if err != nil {
 		return err
 	}
 	return s.client.Set(ctx, sessionKey(token), body, ttl).Err()
 }
-func (s *RedisSessions) Get(ctx context.Context, token string) (User, error) {
-	var u User
+func (s *RedisSessions) Get(ctx context.Context, token string) (models.User, error) {
+	var u models.User
 	body, err := s.client.Get(ctx, sessionKey(token)).Bytes()
 	if errors.Is(err, redis.Nil) {
 		return u, ErrNotFound

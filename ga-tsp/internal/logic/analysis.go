@@ -1,52 +1,16 @@
-// Package analysis runs reproducible, bounded optimization comparisons.
-package analysis
+package logic
 
 import (
 	"context"
 	"fmt"
 	"math"
 
-	"simple_tuan/internal/dispatch"
+	"simple_tuan/internal/models"
 	"simple_tuan/pkg/ga"
-	"simple_tuan/pkg/optimization"
 )
 
-type Group struct {
-	Name     string               `json:"name"`
-	TSP      *ga.Params           `json:"tsp,omitempty"`
-	Knapsack *optimization.Params `json:"knapsack,omitempty"`
-}
-type Request struct {
-	Problem   string                     `json:"problem"`
-	Route     *dispatch.RouteRequest     `json:"route,omitempty"`
-	Selection *dispatch.SelectionRequest `json:"selection,omitempty"`
-	Groups    []Group                    `json:"groups"`
-	Seeds     []int64                    `json:"seeds"`
-}
-type Run struct {
-	Seed      int64                `json:"seed"`
-	Value     float64              `json:"value"`
-	ElapsedMs float64              `json:"elapsedMs"`
-	Curve     []float64            `json:"curve"`
-	TSP       *ga.Params           `json:"tsp,omitempty"`
-	Knapsack  *optimization.Params `json:"knapsack,omitempty"`
-}
-type Summary struct {
-	Name          string    `json:"name"`
-	Best          float64   `json:"best"`
-	Mean          float64   `json:"mean"`
-	StdDev        float64   `json:"stdDev"`
-	MeanElapsedMs float64   `json:"meanElapsedMs"`
-	MeanCurve     []float64 `json:"meanCurve"`
-	Runs          []Run     `json:"runs"`
-}
-type Result struct {
-	Input  Request   `json:"input"`
-	Unit   string    `json:"unit"`
-	Groups []Summary `json:"groups"`
-}
-
-func validate(req *Request) error {
+// validate 校验重复实验请求并填充默认种子。
+func validateAnalysis(req *models.Request) error {
 	if req.Problem != "tsp" && req.Problem != "knapsack" {
 		return fmt.Errorf("问题须为 tsp 或 knapsack")
 	}
@@ -71,7 +35,7 @@ func validate(req *Request) error {
 		if req.Route == nil {
 			return fmt.Errorf("缺少配送点输入")
 		}
-		inst, _, err := dispatch.RouteInstance(*req.Route)
+		inst, _, err := RouteInstance(*req.Route)
 		if err != nil {
 			return err
 		}
@@ -83,7 +47,7 @@ func validate(req *Request) error {
 		if req.Selection == nil {
 			return fmt.Errorf("缺少订单输入")
 		}
-		if err := dispatch.ValidateOrders(req.Selection.Orders); err != nil {
+		if err := ValidateOrders(req.Selection.Orders); err != nil {
 			return err
 		}
 		if req.Selection.Capacity < 1 || req.Selection.Capacity > 10000 {
@@ -134,12 +98,13 @@ func validate(req *Request) error {
 	return nil
 }
 
-func Compare(ctx context.Context, req Request) (Result, error) {
-	result := Result{Groups: []Summary{}}
+// Compare 运行可复现、预算受控的重复实验并汇总统计。
+func Compare(ctx context.Context, req models.Request) (models.Result, error) {
+	result := models.Result{Groups: []models.Summary{}}
 	if err := ctx.Err(); err != nil {
 		return result, err
 	}
-	if err := validate(&req); err != nil {
+	if err := validateAnalysis(&req); err != nil {
 		return result, err
 	}
 	result.Input = req
@@ -148,22 +113,22 @@ func Compare(ctx context.Context, req Request) (Result, error) {
 		result.Unit = "cents"
 	}
 	for _, g := range req.Groups {
-		runs := []Run{}
+		runs := []models.Run{}
 		for _, seed := range req.Seeds {
 			if err := ctx.Err(); err != nil {
-				return Result{}, err
+				return models.Result{}, err
 			}
-			run := Run{Seed: seed, Curve: []float64{}}
+			run := models.Run{Seed: seed, Curve: []float64{}}
 			if req.Problem == "tsp" {
-				inst, _, err := dispatch.RouteInstance(*req.Route)
+				inst, _, err := RouteInstance(*req.Route)
 				if err != nil {
-					return Result{}, err
+					return models.Result{}, err
 				}
 				p := *g.TSP
 				p.Seed = seed
 				r, err := ga.SolveContext(ctx, inst, p)
 				if err != nil {
-					return Result{}, err
+					return models.Result{}, err
 				}
 				run.Value = r.BestDistance
 				run.ElapsedMs = r.ElapsedMs
@@ -178,9 +143,9 @@ func Compare(ctx context.Context, req Request) (Result, error) {
 				p := *g.Knapsack
 				p.Seed = seed
 				input.Params = &p
-				r, err := dispatch.Select(ctx, input)
+				r, err := Select(ctx, input)
 				if err != nil {
-					return Result{}, err
+					return models.Result{}, err
 				}
 				run.Value = float64(r.Income)
 				run.ElapsedMs = r.Evolution.ElapsedMs
@@ -198,8 +163,8 @@ func Compare(ctx context.Context, req Request) (Result, error) {
 	}
 	return result, nil
 }
-func summarize(name string, runs []Run, maximize bool) Summary {
-	s := Summary{Name: name, Runs: runs, MeanCurve: []float64{}, Best: runs[0].Value}
+func summarize(name string, runs []models.Run, maximize bool) models.Summary {
+	s := models.Summary{Name: name, Runs: runs, MeanCurve: []float64{}, Best: runs[0].Value}
 	for _, r := range runs {
 		s.Mean += r.Value
 		s.MeanElapsedMs += r.ElapsedMs

@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
+	"simple_tuan/internal/models"
 )
 
 const cookieName = "qiji_session"
@@ -199,13 +200,13 @@ func (s *Service) login(w http.ResponseWriter, r *http.Request) {
 	s.cookie(w, token, int(sessionTTL.Seconds()))
 	respond(w, 200, map[string]any{"user": a.User, "expiresIn": int(sessionTTL.Seconds())})
 }
-func (s *Service) user(r *http.Request) (User, error) {
+func (s *Service) user(r *http.Request) (models.User, error) {
 	cookie, err := r.Cookie(cookieName)
 	if err != nil || len(cookie.Value) != 64 {
-		return User{}, ErrNotFound
+		return models.User{}, ErrNotFound
 	}
 	if _, err := hex.DecodeString(cookie.Value); err != nil {
-		return User{}, ErrNotFound
+		return models.User{}, ErrNotFound
 	}
 	return s.sessions.Get(r.Context(), cookie.Value)
 }

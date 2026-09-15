@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"simple_tuan/internal/api"
+	"simple_tuan/internal/models"
 )
 
 // TestBrowserPreview is an opt-in UI fixture, never used by the application.
@@ -13,7 +14,7 @@ func TestBrowserPreview(t *testing.T) {
 	if os.Getenv("QIJI_BROWSER_PREVIEW") != "1" {
 		t.Skip("browser fixture is opt-in")
 	}
-	users := &memoryUsers{accounts: map[string]Account{}}
+	users := &memoryUsers{accounts: map[string]models.Account{}}
 	sessions := &memorySessions{items: map[string]memorySession{}}
 	mux := api.NewMux()
 	mux.Handle("/", http.FileServer(http.Dir("../../web")))

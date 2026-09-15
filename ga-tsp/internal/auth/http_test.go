@@ -12,24 +12,25 @@ import (
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
+	"simple_tuan/internal/models"
 )
 
 type memoryUsers struct {
-	accounts map[string]Account
+	accounts map[string]models.Account
 	mu       sync.Mutex
 }
 
-func (m *memoryUsers) Create(_ context.Context, name string, hash []byte) (User, error) {
+func (m *memoryUsers) Create(_ context.Context, name string, hash []byte) (models.User, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if _, ok := m.accounts[name]; ok {
-		return User{}, ErrDuplicate
+		return models.User{}, ErrDuplicate
 	}
-	u := User{ID: int64(len(m.accounts) + 1), Username: name}
-	m.accounts[name] = Account{User: u, PasswordHash: append([]byte{}, hash...)}
+	u := models.User{ID: int64(len(m.accounts) + 1), Username: name}
+	m.accounts[name] = models.Account{User: u, PasswordHash: append([]byte{}, hash...)}
 	return u, nil
 }
-func (m *memoryUsers) Find(_ context.Context, name string) (Account, error) {
+func (m *memoryUsers) Find(_ context.Context, name string) (models.Account, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	a, ok := m.accounts[name]
@@ -40,7 +41,7 @@ func (m *memoryUsers) Find(_ context.Context, name string) (Account, error) {
 }
 
 type memorySession struct {
-	user    User
+	user    models.User
 	expires time.Time
 }
 type memorySessions struct {
@@ -50,7 +51,7 @@ type memorySessions struct {
 	blocked bool
 }
 
-func (m *memorySessions) Put(_ context.Context, token string, u User, ttl time.Duration) error {
+func (m *memorySessions) Put(_ context.Context, token string, u models.User, ttl time.Duration) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if m.fail {
@@ -59,15 +60,15 @@ func (m *memorySessions) Put(_ context.Context, token string, u User, ttl time.D
 	m.items[token] = memorySession{user: u, expires: time.Now().Add(ttl)}
 	return nil
 }
-func (m *memorySessions) Get(_ context.Context, token string) (User, error) {
+func (m *memorySessions) Get(_ context.Context, token string) (models.User, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if m.fail {
-		return User{}, errors.New("offline")
+		return models.User{}, errors.New("offline")
 	}
 	s, ok := m.items[token]
 	if !ok || s.expires.Before(time.Now()) {
-		return User{}, ErrNotFound
+		return models.User{}, ErrNotFound
 	}
 	return s.user, nil
 }
@@ -98,7 +99,7 @@ func request(h http.Handler, method, path, body string, cookie *http.Cookie) *ht
 	return w
 }
 func TestAuthenticationLifecycle(t *testing.T) {
-	users := &memoryUsers{accounts: map[string]Account{}}
+	users := &memoryUsers{accounts: map[string]models.Account{}}
 	sessions := &memorySessions{items: map[string]memorySession{}}
 	s := New(users, sessions, false)
 	h := s.Handler(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(204) }))
@@ -151,7 +152,7 @@ func TestAuthenticationLifecycle(t *testing.T) {
 	if w := request(h, "GET", "/api/auth/me", "", rotated); w.Code != 401 {
 		t.Fatal("logout failed")
 	}
-	expired := memorySession{user: User{ID: 1}, expires: time.Now().Add(-time.Second)}
+	expired := memorySession{user: models.User{ID: 1}, expires: time.Now().Add(-time.Second)}
 	sessions.items[cookie.Value] = expired
 	if w := request(h, "GET", "/api/auth/me", "", cookie); w.Code != 401 {
 		t.Fatal("expired accepted")
@@ -163,7 +164,7 @@ func TestAuthenticationLifecycle(t *testing.T) {
 }
 func TestAuthValidationAndOrigin(t *testing.T) {
 	sessions := &memorySessions{items: map[string]memorySession{}}
-	h := New(&memoryUsers{accounts: map[string]Account{}}, sessions, true).Handler(http.NotFoundHandler())
+	h := New(&memoryUsers{accounts: map[string]models.Account{}}, sessions, true).Handler(http.NotFoundHandler())
 	for _, body := range []string{`{"username":"a","password":"12345678"}`, `{"username":"valid","password":"short"}`, `{"username":"bad' OR 1=1","password":"12345678"}`, `{}`} {
 		if w := request(h, "POST", "/api/auth/register", body, nil); w.Code != 400 {
 			t.Fatal(w.Code)

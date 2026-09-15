@@ -1,12 +1,14 @@
-package dispatch
+package logic
 
 import (
 	"context"
 	"testing"
+
+	"simple_tuan/internal/models"
 )
 
-func exampleOrders() []Order {
-	return []Order{
+func exampleOrders() []models.Order {
+	return []models.Order{
 		{ID: "A", Name: "宿舍一", X: 20, Y: 25, Load: 4, Income: 1200},
 		{ID: "B", Name: "宿舍二", X: 65, Y: 20, Load: 3, Income: 1000},
 		{ID: "C", Name: "图书馆", X: 80, Y: 70, Load: 2, Income: 700},
@@ -16,7 +18,7 @@ func exampleOrders() []Order {
 }
 
 func TestSelection(t *testing.T) {
-	r, err := Select(context.Background(), SelectionRequest{Orders: exampleOrders(), Capacity: 10})
+	r, err := Select(context.Background(), models.SelectionRequest{Orders: exampleOrders(), Capacity: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -25,16 +27,16 @@ func TestSelection(t *testing.T) {
 	}
 	tests := []struct {
 		name             string
-		orders           []Order
+		orders           []models.Order
 		capacity, income int
 	}{
-		{name: "single cents", orders: []Order{{ID: "A", Name: "点", Load: 1, Income: 101}}, capacity: 1, income: 101},
-		{name: "oversized", orders: []Order{{ID: "A", Name: "点", Load: 2, Income: 101}}, capacity: 1},
-		{name: "empty", orders: []Order{}, capacity: 10},
+		{name: "single cents", orders: []models.Order{{ID: "A", Name: "点", Load: 1, Income: 101}}, capacity: 1, income: 101},
+		{name: "oversized", orders: []models.Order{{ID: "A", Name: "点", Load: 2, Income: 101}}, capacity: 1},
+		{name: "empty", orders: []models.Order{}, capacity: 10},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			r, err := Select(context.Background(), SelectionRequest{Orders: tc.orders, Capacity: tc.capacity})
+			r, err := Select(context.Background(), models.SelectionRequest{Orders: tc.orders, Capacity: tc.capacity})
 			if err != nil || r.Income != tc.income {
 				t.Fatalf("%+v %v", r, err)
 			}
@@ -44,10 +46,10 @@ func TestSelection(t *testing.T) {
 func TestSelectionRejectsInvalid(t *testing.T) {
 	orders := exampleOrders()
 	orders[1].ID = orders[0].ID
-	if _, err := Select(context.Background(), SelectionRequest{Orders: orders, Capacity: 10}); err == nil {
+	if _, err := Select(context.Background(), models.SelectionRequest{Orders: orders, Capacity: 10}); err == nil {
 		t.Fatal("duplicate accepted")
 	}
-	if _, err := Select(context.Background(), SelectionRequest{Capacity: 0}); err == nil {
+	if _, err := Select(context.Background(), models.SelectionRequest{Capacity: 0}); err == nil {
 		t.Fatal("zero capacity accepted")
 	}
 	orders = exampleOrders()
@@ -57,7 +59,7 @@ func TestSelectionRejectsInvalid(t *testing.T) {
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	if _, err := Select(ctx, SelectionRequest{Orders: exampleOrders(), Capacity: 10}); err == nil {
+	if _, err := Select(ctx, models.SelectionRequest{Orders: exampleOrders(), Capacity: 10}); err == nil {
 		t.Fatal("canceled request accepted")
 	}
 }

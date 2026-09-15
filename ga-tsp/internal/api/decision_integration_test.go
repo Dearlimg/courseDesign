@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"simple_tuan/internal/dispatch"
+	"simple_tuan/internal/models"
 )
 
 func TestDecisionFlow(t *testing.T) {
@@ -17,13 +17,13 @@ func TestDecisionFlow(t *testing.T) {
 	if w.Code != 200 {
 		t.Fatal(w.Body.String())
 	}
-	var selected dispatch.SelectionResult
+	var selected models.SelectionResult
 	if err := json.Unmarshal(w.Body.Bytes(), &selected); err != nil {
 		t.Fatal(err)
 	}
-	request := dispatch.RouteRequest{Depot: dispatch.Point{Name: "站"}, Points: []dispatch.Point{}}
+	request := models.RouteRequest{Depot: models.Point{Name: "站"}, Points: []models.Point{}}
 	for _, o := range selected.Selected {
-		request.Points = append(request.Points, dispatch.Point{Name: o.Name, X: o.X, Y: o.Y, OrderIDs: []string{o.ID}})
+		request.Points = append(request.Points, models.Point{Name: o.Name, X: o.X, Y: o.Y, OrderIDs: []string{o.ID}})
 	}
 	body, err := json.Marshal(request)
 	if err != nil {
@@ -34,7 +34,7 @@ func TestDecisionFlow(t *testing.T) {
 	if w.Code != 200 {
 		t.Fatal(w.Body.String())
 	}
-	var route dispatch.RouteResult
+	var route models.RouteResult
 	if err := json.Unmarshal(w.Body.Bytes(), &route); err != nil {
 		t.Fatal(err)
 	}
