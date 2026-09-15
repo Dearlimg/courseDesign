@@ -123,7 +123,7 @@ export function drawRoute(canvas, stops, tour) {
   const c = canvas.getContext("2d"),
     w = canvas.width,
     h = canvas.height;
-  c.fillStyle = "#fafbf6";
+  c.fillStyle = "#fffcf0";
   c.fillRect(0, 0, w, h);
   if (!stops.length) return;
   const xs = stops.map((p) => p.x),
@@ -133,7 +133,7 @@ export function drawRoute(canvas, stops, tour) {
     span = Math.max(Math.max(...xs) - minX, Math.max(...ys) - minY, 1);
   const scale = Math.min(w - 120, h - 100) / span;
   const xy = (p) => [60 + (p.x - minX) * scale, h - 50 - (p.y - minY) * scale];
-  c.strokeStyle = "#e1e8d9";
+  c.strokeStyle = "#f0e9d4";
   c.lineWidth = 1;
   for (let x = 30; x < w; x += 40) {
     c.beginPath();
@@ -141,7 +141,7 @@ export function drawRoute(canvas, stops, tour) {
     c.lineTo(x, h - 20);
     c.stroke();
   }
-  c.strokeStyle = "#24624e";
+  c.strokeStyle = "#c99000";
   c.lineWidth = 2.5;
   c.beginPath();
   [...tour, tour[0]].forEach((id, i) => {
@@ -155,10 +155,10 @@ export function drawRoute(canvas, stops, tour) {
   stops.forEach((p, i) => {
     const [x, y] = xy(p);
     c.beginPath();
-    c.fillStyle = i === 0 ? "#d1a145" : "#24624e";
+    c.fillStyle = i === 0 ? "#ffd233" : "#252422";
     c.arc(x, y, 7, 0, Math.PI * 2);
     c.fill();
-    c.fillStyle = "#234c3c";
+    c.fillStyle = "#252422";
     const label =
       (i === 0 ? "取餐点" : String(tour.indexOf(i))) + " · " + p.name;
     c.fillText(

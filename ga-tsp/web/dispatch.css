@@ -1,11 +1,13 @@
 :root {
   font-family: Inter, "Microsoft YaHei", sans-serif;
-  color: #19382f;
-  background: #f3f5ef;
+  color: #252422;
+  background: #fffcf4;
   font-size: 14px;
-  --green: #24624e;
-  --muted: #6e8075;
-  --border: #dde5dc;
+  --brand: #ffc928;
+  --ink: #302b19;
+  --link: #9a7208;
+  --muted: #7f7a70;
+  --border: #ece5d3;
 }
 * {
   box-sizing: border-box;
@@ -31,30 +33,33 @@ button {
   border-radius: 8px;
   padding: 10px 16px;
   background: white;
-  color: #234c3c;
+  color: var(--ink);
   cursor: pointer;
 }
 button:hover {
-  background: #eaf1e6;
+  background: #fdf3cd;
 }
 button.primary {
-  background: var(--green);
-  color: white;
-  border-color: var(--green);
+  background: var(--brand);
+  color: var(--ink);
+  border-color: var(--brand);
+}
+button.primary:hover {
+  background: #ffc721;
 }
 button:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
 a {
-  color: var(--green);
+  color: var(--link);
 }
 .sidebar {
   position: fixed;
   inset: 0 auto 0 0;
   width: 228px;
-  background: #173b31;
-  color: #f0f4d9;
+  background: #201d15;
+  color: #f5f0dc;
   padding: 38px 24px;
   display: flex;
   flex-direction: column;
@@ -62,7 +67,7 @@ a {
 .brand {
   font-size: 36px;
   font-weight: 750;
-  color: inherit;
+  color: #ffd233;
   text-decoration: none;
   letter-spacing: 4px;
 }
@@ -74,7 +79,7 @@ a {
 }
 .sidebar-note {
   font-size: 12px;
-  color: #afc3ae;
+  color: #a49a82;
   margin: 30px 0;
 }
 .sidebar nav {
@@ -82,19 +87,19 @@ a {
   gap: 14px;
 }
 .sidebar nav a {
-  color: #d9e8cd;
+  color: #e6e0cd;
   text-decoration: none;
   padding: 13px 10px;
   border-radius: 8px;
 }
 .sidebar nav a:hover {
-  background: #315345;
+  background: #39321c;
 }
 .sidebar-bottom {
   margin-top: auto;
   font-size: 12px;
   line-height: 2;
-  color: #afc3ae;
+  color: #a49a82;
 }
 main {
   margin-left: 228px;
@@ -128,7 +133,7 @@ p {
   margin: 0;
 }
 .pill {
-  background: #e1ead6;
+  background: #fff1c3;
   padding: 9px 14px;
   border-radius: 30px;
   white-space: nowrap;
@@ -171,17 +176,23 @@ th {
 th,
 td {
   padding: 12px 8px;
-  border-bottom: 1px solid #edf0e9;
+  border-bottom: 1px solid #f2edde;
 }
 input,
 select,
 textarea {
   border: 1px solid var(--border);
   border-radius: 7px;
-  background: #fcfdf9;
+  background: #fdfcf9;
   padding: 9px;
-  color: #19382f;
+  color: #252422;
   max-width: 100%;
+}
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 2px solid #ffe69d;
+  border-color: #e8bd43;
 }
 td input {
   width: 100%;
@@ -209,7 +220,7 @@ label {
 }
 .empty {
   padding: 28px;
-  background: #f7f9f3;
+  background: #fdfaf0;
   border: 1px dashed var(--border);
   border-radius: 10px;
   color: var(--muted);
@@ -229,19 +240,19 @@ details {
 }
 summary {
   cursor: pointer;
-  color: var(--green);
+  color: var(--link);
 }
 #notice:not(:empty) {
   padding: 13px 18px;
-  background: #e5edda;
+  background: #fff1c3;
   border-radius: 9px;
   position: sticky;
   top: 8px;
   z-index: 3;
 }
 #notice.error {
-  background: #fae8db;
-  color: #943d26;
+  background: #fbe9e1;
+  color: #ac3f29;
 }
 .stats {
   display: grid;
@@ -251,7 +262,7 @@ summary {
 }
 .stat {
   padding: 18px;
-  background: #f4f7ef;
+  background: #fdf7e0;
   border-radius: 10px;
 }
 .stat strong {
@@ -263,7 +274,7 @@ summary {
   color: var(--muted);
 }
 .selected {
-  background: #edf5e4;
+  background: #fdf0bb;
 }
 .cards {
   display: grid;
@@ -277,7 +288,7 @@ summary {
   border-radius: 9px;
 }
 .card.selected {
-  border-color: #8dac6f;
+  border-color: #e8bd43;
 }
 .card p {
   margin: 5px 0;
@@ -297,7 +308,7 @@ canvas {
   display: block;
   width: 100%;
   height: auto;
-  background: #fafbf6;
+  background: #fffcf0;
   border: 1px solid var(--border);
   border-radius: 10px;
   margin: 16px 0;
@@ -307,7 +318,7 @@ canvas {
   min-width: 120px;
 }
 .stale {
-  color: #a35427;
+  color: #ac3f29;
   padding: 10px 0;
 }
 .split {
@@ -325,7 +336,7 @@ textarea {
 }
 .badge {
   font-size: 12px;
-  color: var(--green);
+  color: var(--link);
 }
 @media (max-width: 1050px) {
   .sidebar {
@@ -395,7 +406,7 @@ textarea {
   gap: 15px;
   flex-wrap: wrap;
   padding: 18px 22px;
-  background: #e8eedc;
+  background: #fdf3cd;
   border-radius: 12px;
   font-size: 12px;
 }
@@ -409,5 +420,5 @@ body[data-auth="pending"] > main {
 #authLoading {
   margin: 12vh auto;
   text-align: center;
-  color: #7a7058;
+  color: #858074;
 }
