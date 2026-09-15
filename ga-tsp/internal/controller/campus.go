@@ -10,6 +10,21 @@ import (
 )
 
 func registerCampus(api *gin.RouterGroup) {
+	api.POST("/campus/compare", func(c *gin.Context) {
+		var req models.CampusCompareRequest
+		if err := decodeDecision(c, &req); err != nil {
+			writeError(c, 400, err.Error())
+			return
+		}
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 75*time.Second)
+		defer cancel()
+		result, err := logic.CompareCampus(ctx, req)
+		if err != nil {
+			writeError(c, 400, err.Error())
+			return
+		}
+		writeJSON(c, 200, result)
+	})
 	api.POST("/campus/plan", handleCampusPlan)
 	api.GET("/campus/map", func(c *gin.Context) { writeJSON(c, 200, campus.Default()) })
 	api.POST("/campus/batches/generate", func(c *gin.Context) {
