@@ -66,7 +66,8 @@ func noRouteGuard(svc *logic.AuthService, staticDir string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		p := c.Request.URL.Path
 		isAPI := strings.HasPrefix(p, "/api/")
-		isPage := p == "/" || p == "/index.html" || p == "/tsp.html" || p == "/experiment.html" || p == "/legacy.html"
+		// auth.html 自身不做登录校验，否则会 303 重定向到自己形成死循环。
+		isPage := p == "/" || (strings.HasSuffix(p, ".html") && p != "/auth.html")
 		if isAPI || isPage {
 			ctx, cancel := context.WithTimeout(c.Request.Context(), 4*time.Second)
 			_, err := svc.User(ctx, requestToken(c.Request))
@@ -83,6 +84,10 @@ func noRouteGuard(svc *logic.AuthService, staticDir string) gin.HandlerFunc {
 				writeError(c, 503, "会话服务暂不可用")
 				return
 			}
+			c.Header("Cache-Control", "no-store")
+		}
+		// 样式与脚本也禁止缓存：开发期改前端后刷新即可生效，避免浏览器用旧副本。
+		if strings.HasSuffix(p, ".css") || strings.HasSuffix(p, ".js") {
 			c.Header("Cache-Control", "no-store")
 		}
 		http.FileServer(http.Dir(staticDir)).ServeHTTP(c.Writer, c.Request)
