@@ -1,18 +1,120 @@
 <!doctype html>
 <html lang="zh-CN">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>骑迹 · 配送决策工作台</title><link rel="stylesheet" href="dispatch.css"></head>
-<body>
-<aside class="sidebar"><a class="brand" href="/">骑迹<span>Q I J I · DISPATCH</span></a><p class="sidebar-note">让每一趟配送，更有章法。</p><nav aria-label="主导航"><a href="#orders">01　订单工作台</a><a href="#select">02　智能接单</a><a href="#route">03　配送路线</a><a href="#analysis">04　方案分析</a></nav><div class="sidebar-bottom">园区配送 · 决策辅助<br>统一取餐 / 集中配送 / 完成返站</div></aside>
-<main>
-<header><div><p class="eyebrow">DELIVERY DECISION STUDIO</p><h1>把这一趟，安排好。</h1><p>从订单组合到配送顺序，用遗传算法找到更好的方案。</p></div><span class="pill">调度员工作台</span></header>
-<div id="notice" role="status" aria-live="polite"></div>
-<section id="orders"><div class="section-head"><div><p class="eyebrow">01 / ORDER POOL</p><h2>本趟候选订单</h2></div><div class="actions"><button id="reset">载入园区示例</button><button id="add">＋ 新增订单</button></div></div>
-<p class="muted">餐品已在统一取餐点备齐。配送收入是骑手配送费，不是订单消费金额。坐标为园区平面示意。</p>
-<div class="table-wrap"><table><thead><tr><th>订单编号</th><th>送达点</th><th>X 坐标</th><th>Y 坐标</th><th>容量单位</th><th>配送收入 / 元</th><th>操作</th></tr></thead><tbody id="orderRows"></tbody></table></div>
-<div class="toolbar"><label>餐箱容量<input id="capacity" type="number" min="1" max="10000"></label><span id="orderSummary"></span><span class="muted">编辑后自动保存在本机浏览器</span></div>
-</section>
-<section id="select"><p class="eyebrow">02 / SMART SELECTION</p><h2>智能接单</h2><p>在餐箱容量内，选择预计配送收入更高的订单组合。</p><div id="selectContent" class="empty">准备好订单后，在这里生成接单建议。</div></section>
-<section id="route"><p class="eyebrow">03 / ROUTE PLANNING</p><h2>配送路线</h2><p>统一取餐点出发，访问送达点后返回。平面欧氏距离仅用于方案比较，不是实际道路导航。</p><div id="routeContent" class="empty">配送点将在这里组成一趟完整路线。</div></section>
-<section id="analysis"><p class="eyebrow">04 / ANALYSIS</p><h2>方案分析</h2><p>理解优化过程，比较不同配置，保存课程实验数据。</p><div id="analysisContent"></div><div class="links"><a href="/tsp.html">TSP 原始实验 →</a><a href="/experiment.html?problem=knapsack">背包原始实验 →</a></div><details><summary>更多基准实验</summary><a href="/experiment.html?problem=cec">CEC 测试问题</a></details></section>
-<footer>骑迹 · 基于遗传算法的外卖配送决策系统<span>推荐方案辅助决策，不执行真实派单</span></footer>
-</main><script type="module" src="dispatch.js"></script><script type="module" src="selection.js"></script><script type="module" src="route.js"></script><script type="module" src="analysis.js"></script></body></html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>骑迹 · 配送决策工作台</title>
+    <link rel="stylesheet" href="dispatch.css" />
+  </head>
+  <body>
+    <aside class="sidebar">
+      <a class="brand" href="/">骑迹<span>Q I J I · DISPATCH</span></a>
+      <p class="sidebar-note">让每一趟配送，更有章法。</p>
+      <nav aria-label="主导航">
+        <a href="#orders">01　订单工作台</a><a href="#select">02　智能接单</a
+        ><a href="#route">03　配送路线</a><a href="#analysis">04　方案分析</a>
+      </nav>
+      <div class="sidebar-bottom">
+        园区配送 · 决策辅助<br />统一取餐 / 集中配送 / 完成返站
+      </div>
+    </aside>
+    <main>
+      <header>
+        <div>
+          <p class="eyebrow">DELIVERY DECISION STUDIO</p>
+          <h1>把这一趟，安排好。</h1>
+          <p>从订单组合到配送顺序，用遗传算法找到更好的方案。</p>
+        </div>
+        <span class="pill">调度员工作台</span>
+      </header>
+      <div id="notice" role="status" aria-live="polite"></div>
+      <div class="demo-guide">
+        <strong>五分钟，完成一次配送决策</strong
+        ><span>① 载入订单　→　② 智能接单　→　③ 规划路线　→　④ 对照实验</span
+        ><a href="#orders">从园区示例开始 ↓</a>
+      </div>
+      <section id="orders">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">01 / ORDER POOL</p>
+            <h2>本趟候选订单</h2>
+          </div>
+          <div class="actions">
+            <button id="reset">载入园区示例</button
+            ><button id="add">＋ 新增订单</button>
+          </div>
+        </div>
+        <p class="muted">
+          餐品已在统一取餐点备齐。配送收入是骑手配送费，不是订单消费金额。坐标为园区平面示意。
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>订单编号</th>
+                <th>送达点</th>
+                <th>X 坐标</th>
+                <th>Y 坐标</th>
+                <th>容量单位</th>
+                <th>配送收入 / 元</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="orderRows"></tbody>
+          </table>
+        </div>
+        <div class="toolbar">
+          <label
+            >餐箱容量<input
+              id="capacity"
+              type="number"
+              min="1"
+              max="10000" /></label
+          ><span id="orderSummary"></span
+          ><span class="muted">编辑后自动保存在本机浏览器</span>
+        </div>
+      </section>
+      <section id="select">
+        <p class="eyebrow">02 / SMART SELECTION</p>
+        <h2>智能接单</h2>
+        <p>在餐箱容量内，选择预计配送收入更高的订单组合。</p>
+        <div id="selectContent" class="empty">
+          准备好订单后，在这里生成接单建议。
+        </div>
+      </section>
+      <section id="route">
+        <p class="eyebrow">03 / ROUTE PLANNING</p>
+        <h2>配送路线</h2>
+        <p>
+          统一取餐点出发，访问送达点后返回。平面欧氏距离仅用于方案比较，不是实际道路导航。
+        </p>
+        <div id="routeContent" class="empty">
+          配送点将在这里组成一趟完整路线。
+        </div>
+      </section>
+      <section id="analysis">
+        <p class="eyebrow">04 / ANALYSIS</p>
+        <h2>方案分析</h2>
+        <p>理解优化过程，比较不同配置，保存课程实验数据。</p>
+        <div id="analysisContent"></div>
+        <div class="links">
+          <a href="/tsp.html">TSP 原始实验 →</a
+          ><a href="/experiment.html?problem=knapsack">背包原始实验 →</a>
+        </div>
+        <details>
+          <summary>更多基准实验</summary>
+          <a href="/experiment.html?problem=cec">CEC 测试问题</a>
+        </details>
+      </section>
+      <footer>
+        骑迹 · 基于遗传算法的外卖配送决策系统<span
+          >推荐方案辅助决策，不执行真实派单</span
+        >
+      </footer>
+    </main>
+    <script type="module" src="dispatch.js"></script>
+    <script type="module" src="selection.js"></script>
+    <script type="module" src="route.js"></script>
+    <script type="module" src="analysis.js"></script>
+  </body>
+</html>
