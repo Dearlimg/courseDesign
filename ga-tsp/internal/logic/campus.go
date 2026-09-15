@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"slices"
+	"sort"
 	"time"
 
 	"simple_tuan/internal/models"
@@ -32,23 +33,44 @@ func GenerateBatch(req models.BatchRequest) (models.OrderBatch, error) {
 		return batch, fmt.Errorf("未知订单场景")
 	}
 	m := campus.Default()
+	eligible := []int{}
+	dorms := []int{}
+	for _, place := range m.Places {
+		if place.ID == 0 || m.DepotMeters[place.ID] < 0 {
+			continue
+		}
+		eligible = append(eligible, place.ID)
+		if place.Category == "dorm" {
+			dorms = append(dorms, place.ID)
+		}
+	}
+	if len(eligible) == 0 {
+		return batch, fmt.Errorf("没有可达配送点")
+	}
+	sort.SliceStable(eligible, func(i, j int) bool { return m.DepotMeters[eligible[i]] < m.DepotMeters[eligible[j]] })
+	near := eligible[:min(4, len(eligible))]
+	far := eligible[max(0, len(eligible)-4):]
+	if len(dorms) == 0 {
+		dorms = near
+	}
+	samePlace := dorms[rng.Intn(len(dorms))]
 	batch.MapVersion, batch.Seed, batch.Scenario = m.Version, req.Seed, req.Scenario
 	for i := range req.Count {
-		destination, fee := 1+rng.Intn(len(m.Places)-1), 300+rng.Intn(1001)
+		destination, fee := eligible[rng.Intn(len(eligible))], 300+rng.Intn(1001)
 		switch req.Scenario {
 		case "clustered":
-			destination = 1 + rng.Intn(3)
+			destination = dorms[rng.Intn(len(dorms))]
 		case "near":
-			destination, fee = []int{1, 4, 5}[rng.Intn(3)], 200+rng.Intn(301)
+			destination, fee = near[rng.Intn(len(near))], 200+rng.Intn(301)
 		case "far":
-			destination, fee = 8+rng.Intn(4), 800+rng.Intn(1001)
+			destination, fee = far[rng.Intn(len(far))], 800+rng.Intn(1001)
 		case "outlier":
-			destination = 1 + rng.Intn(2)
+			destination = near[rng.Intn(len(near))]
 			if i%5 == 0 {
-				destination, fee = 11, 100
+				destination, fee = far[len(far)-1], 100
 			}
 		case "same-place":
-			destination = 9
+			destination = samePlace
 		}
 		batch.Orders = append(batch.Orders, models.CampusOrder{
 			ID: fmt.Sprintf("O%03d", i+1), DestinationID: destination,

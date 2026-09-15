@@ -24,6 +24,7 @@ type PlanMetrics struct {
 }
 
 type PlanResult struct {
+	Legs               []CampusLeg     `json:"legs"`
 	Input              PlanRequest     `json:"input"`
 	Selected           []CampusOrder   `json:"selected"`
 	Excluded           []ExcludedOrder `json:"excluded"`
@@ -37,4 +38,11 @@ type PlanResult struct {
 	Baseline           PlanMetrics     `json:"baseline"`
 	BaselineName       string          `json:"baselineName"`
 	ElapsedMS          float64         `json:"elapsedMs"`
+}
+
+type CampusLeg struct {
+	From           int     `json:"from"` // Place ID, not road node ID.
+	To             int     `json:"to"`
+	DistanceMeters float64 `json:"distanceMeters"`
+	RoadPath       []int   `json:"roadPath"` // Indices into map.nodes.
 }

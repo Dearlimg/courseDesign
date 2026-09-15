@@ -3,6 +3,7 @@ package logic
 import (
 	"reflect"
 	"simple_tuan/internal/models"
+	"simple_tuan/pkg/campus"
 	"testing"
 )
 
@@ -18,7 +19,7 @@ func TestBatchReproducible(t *testing.T) {
 			t.Fatal("batch reproducibility")
 		}
 		for _, o := range a.Orders {
-			if o.DestinationID < 1 || o.DestinationID > 11 {
+			if o.DestinationID < 1 || o.DestinationID >= len(campus.Default().Places) {
 				t.Fatal("invalid destination")
 			}
 		}

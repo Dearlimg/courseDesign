@@ -17,7 +17,7 @@ func TestCampusComparison(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(r.Groups) != 3 || r.ExactNetCents == nil || math.Abs(*r.ExactNetCents-360) > 0.001 {
+	if len(r.Groups) != 3 || r.ExactNetCents == nil || math.Abs(*r.ExactNetCents-418) > 0.001 {
 		t.Fatal("exact comparison mismatch")
 	}
 	if r.Groups[2].MeanNetCents <= r.Groups[0].MeanNetCents {

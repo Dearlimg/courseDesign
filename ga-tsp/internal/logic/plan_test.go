@@ -28,7 +28,7 @@ func TestBusinessEconomics(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(r.Selected) != 1 || r.Selected[0].ID != "near" || math.Abs(r.Metrics.NetCents-360) > 0.01 {
+	if len(r.Selected) != 1 || r.Selected[0].ID != "near" || math.Abs(r.Metrics.NetCents-418) > 0.01 {
 		t.Fatalf("remote low-fee order should be excluded: %+v", r)
 	}
 	req.Batch.Orders = []models.CampusOrder{

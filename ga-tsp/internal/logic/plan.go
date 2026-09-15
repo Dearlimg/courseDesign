@@ -81,6 +81,9 @@ func ValidatePlan(req *models.PlanRequest) error {
 		if badID || badPlace || badWeight || badFee {
 			return fmt.Errorf("订单编号、地址、重量或收入非法")
 		}
+		if m.DepotMeters[o.DestinationID] < 0 {
+			return fmt.Errorf("订单 %s 的送达点不可达", o.ID)
+		}
 		if o.ServiceSeconds < 0 || o.ServiceSeconds > 600 {
 			return fmt.Errorf("交付时间须为 0～600 秒")
 		}
@@ -340,13 +343,20 @@ func Plan(ctx context.Context, req models.PlanRequest) (models.PlanResult, error
 		}
 		result.Excluded = append(result.Excluded, models.ExcludedOrder{ID: o.ID, Reason: reason})
 	}
-	result.RoadPath = []int{0}
+	result.RoadPath = []int{p.m.Places[0].NodeID}
+	result.Legs = []models.CampusLeg{}
 	for i, from := range best.stops {
-		path, err := p.m.Path(from, best.stops[(i+1)%len(best.stops)])
+		to := best.stops[(i+1)%len(best.stops)]
+		path, err := p.m.Path(from, to)
 		if err != nil {
 			return result, err
 		}
 		result.RoadPath = append(result.RoadPath, path[1:]...)
+		if from != to {
+			result.Legs = append(result.Legs, models.CampusLeg{
+				From: from, To: to, DistanceMeters: p.m.Distances[from][to], RoadPath: path,
+			})
+		}
 	}
 	if req.Mode == "knapsack" {
 		bag := make([]int, req.CapacityGrams+1)
