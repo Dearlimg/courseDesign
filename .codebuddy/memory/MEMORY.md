@@ -41,4 +41,5 @@
 - 整合：方案 B 深整合——新建 module `qiji`，单二进制/单端口:8080/单页前端；6 算法包(maze/solver/tsp/ga/optimization)复用仅改 import；统一 API `/api/nav/*` `/api/tsp/*` `/api/order/*`(背包接单) `/api/exp/cec/*`(可选)
 - 设计文档：`docs/superpowers/specs/2026-09-14-qiji-platform-design.md` **v2**（纳入背包=自动接单）；**产品名已定：某团（simple_tuan）**（2026-09-15 用户拍板，模块/二进制/env/表名未来统一 ST_ 前缀）；开放问题：CEC是否保留/ECS端口/M5必做
 - **落地进展（2026-09-15，分支 feat/qiji-dispatch）**：三层重构（gin+gorm）6 commit 完成；**校园调度 campus 模块 5 commit 完成**（仿真路网 pkg/campus → 订单批次 → 三模式规划 logic/plan.go → gorm 快照持久化 → 三策略对照+精确验证）；前端首页 index.html 已改为「校园配送决策」四区页面，旧工作台保留在 legacy.html
-- **已知缺口（2026-09-15）**：`ga-tsp/web/campus.js` 未提交但已被 HEAD 的 index.html 引用；docs/ 与 memory 未提交；ECS 8001 容器仍是 09-14 旧版（认证+campus 未部署）；ST_ 命名统一（Task 6）未做
+- **2026-09-15 收尾 4 个提交（全部入库，工作区干净）**：`6ec97a7` 品牌统一为某团 + 归档 docs/ 与 memory（含 `.gitignore` 忽略 `ga-tsp/run*.log`）；`f4143ca` 订单改点餐式卡片 + 单笔配送距离 + 配送箱飞入动画（新增 campus.js 379 行、Map.DepotMeters）；`c0b1dd2` `.css`/`.js` 禁用缓存 + `.html` 后缀页面白名单；`74bd591` 刷新构建产物
+- **已知缺口（2026-09-15）**：ECS 8001 容器仍是 09-14 旧版（认证 + campus 未部署）；ST_ 命名统一（Task 6）未做；`gatsp`(9MB)/`gatsp.exe`(43MB) 构建产物仍被 git 跟踪，`.git` 已 63.8 MiB（未打包散对象），若要瘦身需 strip 后重建或 `git rm --cached`（会动历史，先问用户）
