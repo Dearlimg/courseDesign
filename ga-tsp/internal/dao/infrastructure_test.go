@@ -46,7 +46,9 @@ func TestInfrastructure(t *testing.T) {
 	if err != nil {
 		t.Fatal("create test account failed")
 	}
-	defer users.db.ExecContext(context.Background(), "DELETE FROM qiji_users WHERE id=? AND username=?", user.ID, name)
+	defer func() {
+		users.db.WithContext(context.Background()).Exec("DELETE FROM qiji_users WHERE id=? AND username=?", user.ID, name)
+	}()
 	account, err := users.Find(ctx, name)
 	if err != nil || bcrypt.CompareHashAndPassword(account.PasswordHash, []byte("integration-only-password")) != nil {
 		t.Fatal("persisted account verification failed")

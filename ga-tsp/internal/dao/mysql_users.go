@@ -1,15 +1,18 @@
-// Package dao 封装数据访问：MySQL 账号与 Redis 会话。
+// Package dao 封装数据访问：MySQL 账号（gorm）与 Redis 会话。
 package dao
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"net"
 	"time"
 
-	"github.com/go-sql-driver/mysql"
+	sqlmysql "github.com/go-sql-driver/mysql"
+	gormmysql "gorm.io/driver/mysql"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+
 	"simple_tuan/internal/models"
 )
 
@@ -18,64 +21,69 @@ var (
 	ErrDuplicate = errors.New("duplicate account")
 )
 
-// MySQLUsers 是账号表的数据库访问实现。
-type MySQLUsers struct{ db *sql.DB }
+// account 是账号表的 ORM 模型。
+type account struct {
+	ID           int64     `gorm:"primaryKey;autoIncrement"`
+	Username     string    `gorm:"type:varchar(32);uniqueIndex"`
+	PasswordHash []byte    `gorm:"type:varbinary(72)"`
+	CreatedAt    time.Time `gorm:"type:timestamp;default:CURRENT_TIMESTAMP"`
+}
 
-// NewMySQLUsers 连接 MySQL，可选创建专用数据库与账号表。
+// TableName 固定账号表名。
+func (account) TableName() string { return "qiji_users" }
+
+// MySQLUsers 是账号表的数据访问实现。
+type MySQLUsers struct{ db *gorm.DB }
+
+// NewMySQLUsers 连接 MySQL，可选创建专用数据库，并 AutoMigrate 账号表。
 func NewMySQLUsers(ctx context.Context, addr, user, password, database string, createDB bool) (*MySQLUsers, error) {
-	cfg := mysql.NewConfig()
-	cfg.Logger = &mysql.NopLogger{}
-	cfg.User = user
-	cfg.Passwd = password
-	cfg.Net = "tcp"
-	cfg.Addr = addr
-	cfg.ParseTime = true
-	cfg.Timeout = 10 * time.Second
-	cfg.ReadTimeout = 10 * time.Second
-	cfg.WriteTimeout = 10 * time.Second
+	base := sqlmysql.Config{
+		User: user, Passwd: password, Net: "tcp", Addr: addr,
+		ParseTime:    true,
+		Loc:          time.Local,
+		Params:       map[string]string{"charset": "utf8mb4"},
+		Timeout:      10 * time.Second,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
+	}
+	options := &gorm.Config{Logger: logger.Default.LogMode(logger.Silent), TranslateError: true}
 	if createDB {
-		connector, err := mysql.NewConnector(cfg)
+		root := base
+		bootstrap, err := gorm.Open(gormmysql.Open(root.FormatDSN()), options)
 		if err != nil {
-			return nil, fmt.Errorf("MySQL 配置无效")
+			return nil, fmt.Errorf("MySQL 连接失败，请核对本地配置")
 		}
-		bootstrap := sql.OpenDB(connector)
-		// Database has already been restricted to an identifier by config.Read.
-		_, err = bootstrap.ExecContext(ctx, "CREATE DATABASE IF NOT EXISTS `"+database+"` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci")
-		bootstrap.Close()
+		err = bootstrap.Exec("CREATE DATABASE IF NOT EXISTS `" + database + "` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci").Error
 		if err != nil {
 			return nil, fmt.Errorf("专用数据库初始化失败：%s", safeConnectionError(err))
 		}
 	}
-	cfg.DBName = database
-	connector, err := mysql.NewConnector(cfg)
+	base.DBName = database
+	db, err := gorm.Open(gormmysql.Open(base.FormatDSN()), options)
 	if err != nil {
-		return nil, fmt.Errorf("MySQL 配置无效")
+		return nil, fmt.Errorf("MySQL 连接失败，请核对本地配置")
 	}
-	db := sql.OpenDB(connector)
-	db.SetMaxOpenConns(10)
-	db.SetMaxIdleConns(5)
-	db.SetConnMaxLifetime(3 * time.Minute)
-	fail := func(message string) (*MySQLUsers, error) {
-		db.Close()
-		return nil, errors.New(message)
-	}
-	if err := db.PingContext(ctx); err != nil {
-		return fail("MySQL 连接失败，请核对本地配置")
-	}
-	_, err = db.ExecContext(ctx, `CREATE TABLE IF NOT EXISTS qiji_users (
- id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
- username VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL UNIQUE,
- password_hash VARBINARY(72) NOT NULL,
- created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
- ) ENGINE=InnoDB`)
+	sqlDB, err := db.DB()
 	if err != nil {
-		return fail("账号表初始化失败")
+		return nil, err
+	}
+	sqlDB.SetMaxOpenConns(10)
+	sqlDB.SetMaxIdleConns(5)
+	sqlDB.SetConnMaxLifetime(3 * time.Minute)
+	if err := sqlDB.PingContext(ctx); err != nil {
+		sqlDB.Close()
+		return nil, fmt.Errorf("MySQL 连接失败，请核对本地配置")
+	}
+	if err := db.WithContext(ctx).AutoMigrate(&account{}); err != nil {
+		sqlDB.Close()
+		return nil, fmt.Errorf("账号表初始化失败")
 	}
 	return &MySQLUsers{db: db}, nil
 }
 
+// safeConnectionError 将底层连接错误转为可读提示。
 func safeConnectionError(err error) string {
-	var sqlErr *mysql.MySQLError
+	var sqlErr *sqlmysql.MySQLError
 	if errors.As(err, &sqlErr) {
 		return fmt.Sprintf("MySQL 错误码 %d（请核对账号及建库权限）", sqlErr.Number)
 	}
@@ -86,27 +94,36 @@ func safeConnectionError(err error) string {
 	return "连接不可用"
 }
 
-func (u *MySQLUsers) Close() error { return u.db.Close() }
-
-func (u *MySQLUsers) Create(ctx context.Context, name string, hash []byte) (models.User, error) {
-	result, err := u.db.ExecContext(ctx, "INSERT INTO qiji_users (username,password_hash) VALUES (?,?)", name, hash)
+func (u *MySQLUsers) Close() error {
+	sqlDB, err := u.db.DB()
 	if err != nil {
-		var driverErr *mysql.MySQLError
-		if errors.As(err, &driverErr) && driverErr.Number == 1062 {
-			return models.User{}, ErrDuplicate
-		}
-		return models.User{}, err
+		return err
 	}
-	id, err := result.LastInsertId()
-	return models.User{ID: id, Username: name}, err
+	return sqlDB.Close()
 }
 
-func (u *MySQLUsers) Find(ctx context.Context, name string) (models.Account, error) {
-	var a models.Account
-	err := u.db.QueryRowContext(ctx, "SELECT id,username,password_hash FROM qiji_users WHERE username=?", name).
-		Scan(&a.ID, &a.Username, &a.PasswordHash)
-	if errors.Is(err, sql.ErrNoRows) {
-		return a, ErrNotFound
+// Create 插入新账号；用户名重复时返回 ErrDuplicate（依赖 gorm 错误翻译）。
+func (u *MySQLUsers) Create(ctx context.Context, name string, hash []byte) (models.User, error) {
+	row := account{Username: name, PasswordHash: hash}
+	err := u.db.WithContext(ctx).Create(&row).Error
+	if errors.Is(err, gorm.ErrDuplicatedKey) {
+		return models.User{}, ErrDuplicate
 	}
-	return a, err
+	if err != nil {
+		return models.User{}, err
+	}
+	return models.User{ID: row.ID, Username: row.Username}, nil
+}
+
+// Find 按用户名查询账号；不存在时返回 ErrNotFound。
+func (u *MySQLUsers) Find(ctx context.Context, name string) (models.Account, error) {
+	var row account
+	err := u.db.WithContext(ctx).Where("username = ?", name).First(&row).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return models.Account{}, ErrNotFound
+	}
+	if err != nil {
+		return models.Account{}, err
+	}
+	return models.Account{User: models.User{ID: row.ID, Username: row.Username}, PasswordHash: row.PasswordHash}, nil
 }
