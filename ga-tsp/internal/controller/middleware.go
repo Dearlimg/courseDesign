@@ -44,7 +44,7 @@ func requireLogin(svc *logic.AuthService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(c.Request.Context(), 4*time.Second)
 		defer cancel()
-		_, err := svc.User(ctx, requestToken(c.Request))
+		user, err := svc.User(ctx, requestToken(c.Request))
 		if errors.Is(err, logic.ErrNotFound) {
 			writeError(c, 401, "登录已失效，请重新登录")
 			c.Abort()
@@ -56,6 +56,7 @@ func requireLogin(svc *logic.AuthService) gin.HandlerFunc {
 			return
 		}
 		c.Header("Cache-Control", "no-store")
+		c.Set("userID", user.ID)
 		c.Next()
 	}
 }

@@ -37,6 +37,12 @@ func main() {
 	}
 	defer users.Close()
 	defer sessions.Close()
+	dbctx, dbcancel := context.WithTimeout(context.Background(), 20*time.Second)
+	store, err := users.CampusStore(dbctx)
+	dbcancel()
+	if err != nil {
+		log.Fatal(err)
+	}
 	svc := logic.NewAuth(users, sessions)
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -44,7 +50,7 @@ func main() {
 	}
 	srv := &http.Server{
 		Addr:         ":" + port,
-		Handler:      controller.NewApp(svc, settings.CookieSecure, "web"),
+		Handler:      controller.NewApp(svc, settings.CookieSecure, "web", store),
 		ReadTimeout:  30 * time.Second,
 		WriteTimeout: 120 * time.Second, // 参数扫描请求耗时较长
 	}

@@ -2,6 +2,7 @@ package dao
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -10,6 +11,8 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 	"simple_tuan/internal/config"
+	"simple_tuan/internal/models"
+	"simple_tuan/pkg/campus"
 )
 
 // This opt-in test touches only its generated account and exact Redis keys.
@@ -49,6 +52,30 @@ func TestInfrastructure(t *testing.T) {
 	defer func() {
 		users.db.WithContext(context.Background()).Exec("DELETE FROM qiji_users WHERE id=? AND username=?", user.ID, name)
 	}()
+	store, err := users.CampusStore(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, err := json.Marshal(models.OrderBatch{MapVersion: campus.Default().Version, Orders: []models.CampusOrder{}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	record, err := store.Save(ctx, user.ID, "batch", body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer users.db.Exec("DELETE FROM tuan_campus_snapshots WHERE id=? AND owner_id=?", record.ID, user.ID)
+	loaded, err := store.Get(ctx, user.ID, record.ID)
+	if err != nil || string(loaded.Payload) != string(body) {
+		t.Fatal("snapshot roundtrip failed")
+	}
+	if _, err := store.Get(ctx, user.ID+1, record.ID); err != ErrNotFound {
+		t.Fatal("snapshot owner isolation failed")
+	}
+	listed, err := store.List(ctx, user.ID, "batch")
+	if err != nil || len(listed) != 1 || listed[0].ID != record.ID {
+		t.Fatal("snapshot listing failed")
+	}
 	account, err := users.Find(ctx, name)
 	if err != nil || bcrypt.CompareHashAndPassword(account.PasswordHash, []byte("integration-only-password")) != nil {
 		t.Fatal("persisted account verification failed")

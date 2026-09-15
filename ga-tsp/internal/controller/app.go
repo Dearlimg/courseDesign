@@ -17,7 +17,7 @@ func NewMux() http.Handler {
 }
 
 // NewApp 组装完整应用：安全头、认证端点、登录守卫、业务路由与静态托管。
-func NewApp(svc *logic.AuthService, secure bool, staticDir string) http.Handler {
+func NewApp(svc *logic.AuthService, secure bool, staticDir string, stores ...logic.CampusStore) http.Handler {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
 	r.Use(securityHeaders(), gin.Recovery())
@@ -26,13 +26,13 @@ func NewApp(svc *logic.AuthService, secure bool, staticDir string) http.Handler 
 	r.POST("/api/auth/login", h.login)
 	r.POST("/api/auth/logout", h.logout)
 	r.GET("/api/auth/me", h.me)
-	registerBusiness(r, svc)
+	registerBusiness(r, svc, stores...)
 	r.NoRoute(noRouteGuard(svc, staticDir))
 	return r
 }
 
 // registerBusiness 注册业务 API；svc 非空时挂登录守卫。
-func registerBusiness(r *gin.Engine, svc *logic.AuthService) {
+func registerBusiness(r *gin.Engine, svc *logic.AuthService, stores ...logic.CampusStore) {
 	api := r.Group("/api")
 	if svc != nil {
 		api.Use(requireLogin(svc))
@@ -44,6 +44,9 @@ func registerBusiness(r *gin.Engine, svc *logic.AuthService) {
 	api.POST("/scan", handleScan)
 	registerExperiments(api)
 	registerCampus(api)
+	if len(stores) > 0 {
+		registerSnapshots(api, stores[0])
+	}
 	api.POST("/analysis/compare", handleCompare)
 	api.POST("/dispatch/route", handleRoute)
 	api.POST("/dispatch/select", handleSelection)
