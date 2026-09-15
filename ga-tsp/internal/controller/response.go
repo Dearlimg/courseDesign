@@ -1,19 +1,16 @@
 package controller
 
 import (
-	"encoding/json"
-	"net/http"
+	"github.com/gin-gonic/gin"
 )
 
 // writeJSON 写出 JSON 响应并禁用缓存。
-func writeJSON(w http.ResponseWriter, status int, v any) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.Header().Set("Cache-Control", "no-store")
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(v)
+func writeJSON(c *gin.Context, status int, v any) {
+	c.Header("Cache-Control", "no-store")
+	c.JSON(status, v)
 }
 
 // writeError 写出统一错误契约 {"error": msg}。
-func writeError(w http.ResponseWriter, status int, msg string) {
-	writeJSON(w, status, map[string]string{"error": msg})
+func writeError(c *gin.Context, status int, msg string) {
+	writeJSON(c, status, gin.H{"error": msg})
 }

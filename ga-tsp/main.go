@@ -38,16 +38,13 @@ func main() {
 	defer users.Close()
 	defer sessions.Close()
 	svc := logic.NewAuth(users, sessions)
-	mux := controller.NewMux()
-	mux.Handle("/", http.FileServer(http.Dir("web")))
-
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8081"
 	}
 	srv := &http.Server{
 		Addr:         ":" + port,
-		Handler:      controller.NewApp(svc, settings.CookieSecure, mux),
+		Handler:      controller.NewApp(svc, settings.CookieSecure, "web"),
 		ReadTimeout:  30 * time.Second,
 		WriteTimeout: 120 * time.Second, // 参数扫描请求耗时较长
 	}

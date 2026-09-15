@@ -102,7 +102,7 @@ func request(h http.Handler, method, path, body string, cookie *http.Cookie) *ht
 func TestAuthenticationLifecycle(t *testing.T) {
 	users := &memoryUsers{accounts: map[string]models.Account{}}
 	sessions := &memorySessions{items: map[string]memorySession{}}
-	h := NewApp(logic.NewAuth(users, sessions), false, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(204) }))
+	h := NewApp(logic.NewAuth(users, sessions), false, "web")
 	body := `{"username":"Test_User","password":"test-password-123"}`
 	if w := request(h, "GET", "/api/dispatch/anything", "", nil); w.Code != 401 {
 		t.Fatal(w.Code)
@@ -136,7 +136,7 @@ func TestAuthenticationLifecycle(t *testing.T) {
 	if w := request(h, "GET", "/api/auth/me", "", cookie); w.Code != 200 {
 		t.Fatal(w.Code)
 	}
-	if w := request(h, "GET", "/api/dispatch/anything", "", cookie); w.Code != 204 {
+	if w := request(h, "GET", "/api/instances", "", cookie); w.Code != 200 {
 		t.Fatal(w.Code)
 	}
 	rotated := request(h, "POST", "/api/auth/login", body, cookie).Result().Cookies()[0]
@@ -158,13 +158,13 @@ func TestAuthenticationLifecycle(t *testing.T) {
 		t.Fatal("expired accepted")
 	}
 	sessions.fail = true
-	if w := request(h, "GET", "/api/dispatch/anything", "", cookie); w.Code != 503 {
+	if w := request(h, "GET", "/api/instances", "", cookie); w.Code != 503 {
 		t.Fatal("redis failure allowed access")
 	}
 }
 func TestAuthValidationAndOrigin(t *testing.T) {
 	sessions := &memorySessions{items: map[string]memorySession{}}
-	h := NewApp(logic.NewAuth(&memoryUsers{accounts: map[string]models.Account{}}, sessions), true, http.NotFoundHandler())
+	h := NewApp(logic.NewAuth(&memoryUsers{accounts: map[string]models.Account{}}, sessions), true, "web")
 	for _, body := range []string{`{"username":"a","password":"12345678"}`, `{"username":"valid","password":"short"}`, `{"username":"bad' OR 1=1","password":"12345678"}`, `{}`} {
 		if w := request(h, "POST", "/api/auth/register", body, nil); w.Code != 400 {
 			t.Fatal(w.Code)

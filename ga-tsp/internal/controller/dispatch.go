@@ -8,35 +8,32 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gin-gonic/gin"
+
 	"simple_tuan/internal/logic"
 	"simple_tuan/internal/models"
 )
 
-func registerDispatch(mux *http.ServeMux) {
-	mux.HandleFunc("POST /api/analysis/compare", handleCompare)
-	mux.HandleFunc("POST /api/dispatch/route", handleRoute)
-	mux.HandleFunc("POST /api/dispatch/select", handleSelection)
-}
-
-func handleRoute(w http.ResponseWriter, r *http.Request) {
+func handleRoute(c *gin.Context) {
 	var req models.RouteRequest
-	if err := decodeDecision(w, r, &req); err != nil {
-		writeError(w, 400, err.Error())
+	if err := decodeDecision(c, &req); err != nil {
+		writeError(c, 400, err.Error())
 		return
 	}
-	ctx, cancel := context.WithTimeout(r.Context(), 45*time.Second)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 45*time.Second)
 	defer cancel()
 	result, err := logic.Route(ctx, req)
 	if err != nil {
-		writeError(w, 400, err.Error())
+		writeError(c, 400, err.Error())
 		return
 	}
-	writeJSON(w, 200, result)
+	writeJSON(c, 200, result)
 }
 
-func decodeDecision(w http.ResponseWriter, r *http.Request, v any) error {
-	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
-	decoder := json.NewDecoder(r.Body)
+// decodeDecision 严格解析请求体：未知字段与多段 JSON 均拒绝。
+func decodeDecision(c *gin.Context, v any) error {
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 1<<20)
+	decoder := json.NewDecoder(c.Request.Body)
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(v); err != nil {
 		return fmt.Errorf("请求格式错误：%w", err)
@@ -47,18 +44,18 @@ func decodeDecision(w http.ResponseWriter, r *http.Request, v any) error {
 	return nil
 }
 
-func handleSelection(w http.ResponseWriter, r *http.Request) {
+func handleSelection(c *gin.Context) {
 	var req models.SelectionRequest
-	if err := decodeDecision(w, r, &req); err != nil {
-		writeError(w, 400, err.Error())
+	if err := decodeDecision(c, &req); err != nil {
+		writeError(c, 400, err.Error())
 		return
 	}
-	ctx, cancel := context.WithTimeout(r.Context(), 45*time.Second)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 45*time.Second)
 	defer cancel()
 	result, err := logic.Select(ctx, req)
 	if err != nil {
-		writeError(w, 400, err.Error())
+		writeError(c, 400, err.Error())
 		return
 	}
-	writeJSON(w, 200, result)
+	writeJSON(c, 200, result)
 }

@@ -8,58 +8,82 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
+
 	"simple_tuan/internal/logic"
 )
 
 // securityHeaders 设置安全响应头并拦截跨站 POST。
-func securityHeaders(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("X-Content-Type-Options", "nosniff")
-		w.Header().Set("Referrer-Policy", "same-origin")
-		w.Header().Set("X-Frame-Options", "DENY")
-		if r.Method == "POST" {
-			origin := r.Header.Get("Origin")
+func securityHeaders() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Header("X-Content-Type-Options", "nosniff")
+		c.Header("Referrer-Policy", "same-origin")
+		c.Header("X-Frame-Options", "DENY")
+		if c.Request.Method == "POST" {
+			origin := c.Request.Header.Get("Origin")
 			if origin != "" {
 				u, err := url.Parse(origin)
-				if err != nil || u.Host != r.Host || (u.Scheme != "http" && u.Scheme != "https") {
-					writeError(w, 403, "不允许跨站提交")
+				if err != nil || u.Host != c.Request.Host || (u.Scheme != "http" && u.Scheme != "https") {
+					writeError(c, 403, "不允许跨站提交")
+					c.Abort()
 					return
 				}
 			}
-			if r.Header.Get("Sec-Fetch-Site") == "cross-site" {
-				writeError(w, 403, "不允许跨站提交")
+			if c.Request.Header.Get("Sec-Fetch-Site") == "cross-site" {
+				writeError(c, 403, "不允许跨站提交")
+				c.Abort()
 				return
 			}
 		}
-		next.ServeHTTP(w, r)
-	})
+		c.Next()
+	}
 }
 
-// requireAuth 对页面与业务 API 执行登录校验。
-func requireAuth(svc *logic.AuthService, next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		isAPI := strings.HasPrefix(r.URL.Path, "/api/")
-		isPage := r.URL.Path == "/" || r.URL.Path == "/index.html" || r.URL.Path == "/tsp.html" || r.URL.Path == "/experiment.html"
-		if !isAPI && !isPage {
-			next.ServeHTTP(w, r)
-			return
-		}
-		ctx, cancel := context.WithTimeout(r.Context(), 4*time.Second)
-		_, err := svc.User(ctx, requestToken(r))
-		cancel()
+// requireLogin 对业务 API 执行登录校验。
+func requireLogin(svc *logic.AuthService) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 4*time.Second)
+		defer cancel()
+		_, err := svc.User(ctx, requestToken(c.Request))
 		if errors.Is(err, logic.ErrNotFound) {
-			if isPage {
-				http.Redirect(w, r, "/auth.html", http.StatusSeeOther)
-				return
-			}
-			writeError(w, 401, "登录已失效，请重新登录")
+			writeError(c, 401, "登录已失效，请重新登录")
+			c.Abort()
 			return
 		}
 		if err != nil {
-			writeError(w, 503, "会话服务暂不可用")
+			writeError(c, 503, "会话服务暂不可用")
+			c.Abort()
 			return
 		}
-		w.Header().Set("Cache-Control", "no-store")
-		next.ServeHTTP(w, r)
-	})
+		c.Header("Cache-Control", "no-store")
+		c.Next()
+	}
+}
+
+// noRouteGuard 兜底处理未注册路径：页面与业务 API 做登录校验，其余交静态托管。
+func noRouteGuard(svc *logic.AuthService, staticDir string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		p := c.Request.URL.Path
+		isAPI := strings.HasPrefix(p, "/api/")
+		isPage := p == "/" || p == "/index.html" || p == "/tsp.html" || p == "/experiment.html"
+		if isAPI || isPage {
+			ctx, cancel := context.WithTimeout(c.Request.Context(), 4*time.Second)
+			_, err := svc.User(ctx, requestToken(c.Request))
+			cancel()
+			if errors.Is(err, logic.ErrNotFound) {
+				if isPage {
+					c.Redirect(http.StatusSeeOther, "/auth.html")
+					return
+				}
+				writeError(c, 401, "登录已失效，请重新登录")
+				return
+			}
+			if err != nil {
+				writeError(c, 503, "会话服务暂不可用")
+				return
+			}
+			c.Header("Cache-Control", "no-store")
+		}
+		http.FileServer(http.Dir(staticDir)).ServeHTTP(c.Writer, c.Request)
+	}
 }

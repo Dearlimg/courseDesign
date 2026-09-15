@@ -16,9 +16,7 @@ func TestBrowserPreview(t *testing.T) {
 	}
 	users := &memoryUsers{accounts: map[string]models.Account{}}
 	sessions := &memorySessions{items: map[string]memorySession{}}
-	mux := NewMux()
-	mux.Handle("/", http.FileServer(http.Dir("../../web")))
-	server := &http.Server{Addr: "127.0.0.1:8081", Handler: NewApp(logic.NewAuth(users, sessions), false, mux)}
+	server := &http.Server{Addr: "127.0.0.1:8081", Handler: NewApp(logic.NewAuth(users, sessions), false, "../../web")}
 	t.Cleanup(func() { server.Close() })
 	t.Log("TEST-ONLY browser fixture: http://localhost:8081 (in-memory accounts, no database claim)")
 	if err := server.ListenAndServe(); err != http.ErrServerClosed {

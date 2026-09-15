@@ -3,17 +3,47 @@ package controller
 import (
 	"net/http"
 
+	"github.com/gin-gonic/gin"
+
 	"simple_tuan/internal/logic"
 )
 
-// NewApp 组装完整应用：认证端点、登录守卫与业务路由。
-func NewApp(svc *logic.AuthService, secure bool, next http.Handler) http.Handler {
+// NewMux 构建仅含业务路由的路由器（测试与预览用，无登录守卫）。
+func NewMux() http.Handler {
+	gin.SetMode(gin.ReleaseMode)
+	r := gin.New()
+	registerBusiness(r, nil)
+	return r
+}
+
+// NewApp 组装完整应用：安全头、认证端点、登录守卫、业务路由与静态托管。
+func NewApp(svc *logic.AuthService, secure bool, staticDir string) http.Handler {
+	gin.SetMode(gin.ReleaseMode)
+	r := gin.New()
+	r.Use(securityHeaders(), gin.Recovery())
 	h := &authHandlers{svc: svc, secure: secure}
-	mux := http.NewServeMux()
-	mux.HandleFunc("POST /api/auth/register", h.register)
-	mux.HandleFunc("POST /api/auth/login", h.login)
-	mux.HandleFunc("POST /api/auth/logout", h.logout)
-	mux.HandleFunc("GET /api/auth/me", h.me)
-	mux.Handle("/", requireAuth(svc, next))
-	return securityHeaders(mux)
+	r.POST("/api/auth/register", h.register)
+	r.POST("/api/auth/login", h.login)
+	r.POST("/api/auth/logout", h.logout)
+	r.GET("/api/auth/me", h.me)
+	registerBusiness(r, svc)
+	r.NoRoute(noRouteGuard(svc, staticDir))
+	return r
+}
+
+// registerBusiness 注册业务 API；svc 非空时挂登录守卫。
+func registerBusiness(r *gin.Engine, svc *logic.AuthService) {
+	api := r.Group("/api")
+	if svc != nil {
+		api.Use(requireLogin(svc))
+	}
+	api.GET("/instances", handleListInstances)
+	api.GET("/instances/:name", handleGetInstance)
+	api.POST("/instance/random", handleRandomInstance)
+	api.POST("/solve", handleSolve)
+	api.POST("/scan", handleScan)
+	registerExperiments(api)
+	api.POST("/analysis/compare", handleCompare)
+	api.POST("/dispatch/route", handleRoute)
+	api.POST("/dispatch/select", handleSelection)
 }

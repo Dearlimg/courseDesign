@@ -1,5 +1,5 @@
-// Package api 提供 GA-TSP 系统的 REST 接口：
-// 实例管理（内置/随机）、GA 求解、参数扫描对比实验。
+// Package controller 是 HTTP 协议适配层：
+// 实例管理（内置/随机）、GA 求解、参数扫描与骑手调度 API。
 package controller
 
 import (
@@ -8,48 +8,37 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/gin-gonic/gin"
+
 	"simple_tuan/pkg/ga"
 	"simple_tuan/pkg/tsp"
 )
 
-// NewMux 构建路由并注册所有 API 端点。
-func NewMux() *http.ServeMux {
-	mux := http.NewServeMux()
-	registerExperiments(mux)
-	registerDispatch(mux)
-	mux.HandleFunc("GET /api/instances", handleListInstances)
-	mux.HandleFunc("GET /api/instances/{name}", handleGetInstance)
-	mux.HandleFunc("POST /api/instance/random", handleRandomInstance)
-	mux.HandleFunc("POST /api/solve", handleSolve)
-	mux.HandleFunc("POST /api/scan", handleScan)
-	return mux
-}
-
 // handleListInstances 返回内置实例列表。
-func handleListInstances(w http.ResponseWriter, _ *http.Request) {
+func handleListInstances(c *gin.Context) {
 	list := []map[string]any{
 		{"name": "att48", "size": 48, "optimal": 10628.0, "edgeType": "att"},
 	}
-	writeJSON(w, http.StatusOK, list)
+	writeJSON(c, http.StatusOK, list)
 }
 
 // handleGetInstance 按名称返回内置实例。
-func handleGetInstance(w http.ResponseWriter, r *http.Request) {
-	name := r.PathValue("name")
+func handleGetInstance(c *gin.Context) {
+	name := c.Param("name")
 	if name != "att48" {
-		writeError(w, http.StatusNotFound, "未知实例 "+name)
+		writeError(c, http.StatusNotFound, "未知实例 "+name)
 		return
 	}
-	writeJSON(w, http.StatusOK, tsp.Att48())
+	writeJSON(c, http.StatusOK, tsp.Att48())
 }
 
 // handleRandomInstance 生成随机欧氏实例。
-func handleRandomInstance(w http.ResponseWriter, r *http.Request) {
+func handleRandomInstance(c *gin.Context) {
 	var req struct {
 		N    int   `json:"n"`
 		Seed int64 `json:"seed"`
 	}
-	if err := decodeBody(w, r, &req); err != nil {
+	if err := decodeBody(c, &req); err != nil {
 		return
 	}
 	if req.Seed == 0 {
@@ -57,10 +46,10 @@ func handleRandomInstance(w http.ResponseWriter, r *http.Request) {
 	}
 	inst, err := tsp.Random(req.N, req.Seed)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
+		writeError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	writeJSON(w, http.StatusOK, inst)
+	writeJSON(c, http.StatusOK, inst)
 }
 
 // instancePayload 是请求中的实例数据。
@@ -97,26 +86,26 @@ func buildInstance(p instancePayload) (*tsp.Instance, error) {
 }
 
 // handleSolve 运行 GA 并返回逐代快照与最终结果。
-func handleSolve(w http.ResponseWriter, r *http.Request) {
+func handleSolve(c *gin.Context) {
 	var req solveRequest
-	if err := decodeBody(w, r, &req); err != nil {
+	if err := decodeBody(c, &req); err != nil {
 		return
 	}
 	inst, err := buildInstance(req.Instance)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
+		writeError(c, http.StatusBadRequest, err.Error())
 		return
 	}
 	if err := req.Params.Normalize(); err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
+		writeError(c, http.StatusBadRequest, err.Error())
 		return
 	}
 	result, err := ga.Solve(inst, req.Params)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
+		writeError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	writeJSON(w, http.StatusOK, result)
+	writeJSON(c, http.StatusOK, result)
 }
 
 // scanRequest 是参数扫描请求：固定其他参数，仅变化一个参数观察收敛差异。
@@ -137,27 +126,27 @@ var scanParamDefs = map[string]func(*ga.Params, float64){
 }
 
 // handleScan 对同一实例用相同种子跑多组参数，返回精简的收敛数据。
-func handleScan(w http.ResponseWriter, r *http.Request) {
+func handleScan(c *gin.Context) {
 	var req scanRequest
-	if err := decodeBody(w, r, &req); err != nil {
+	if err := decodeBody(c, &req); err != nil {
 		return
 	}
 	inst, err := buildInstance(req.Instance)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
+		writeError(c, http.StatusBadRequest, err.Error())
 		return
 	}
 	if err := req.Params.Normalize(); err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
+		writeError(c, http.StatusBadRequest, err.Error())
 		return
 	}
 	setter, ok := scanParamDefs[req.Param]
 	if !ok {
-		writeError(w, http.StatusBadRequest, "未知扫描参数 "+strconv.Quote(req.Param))
+		writeError(c, http.StatusBadRequest, "未知扫描参数 "+strconv.Quote(req.Param))
 		return
 	}
 	if len(req.Values) == 0 || len(req.Values) > 8 {
-		writeError(w, http.StatusBadRequest, "扫描值数量须在 [1,8]")
+		writeError(c, http.StatusBadRequest, "扫描值数量须在 [1,8]")
 		return
 	}
 
@@ -167,7 +156,7 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 		setter(&p, v)
 		result, err := ga.Solve(inst, p)
 		if err != nil {
-			writeError(w, http.StatusBadRequest, fmt.Sprintf("参数 %s=%v 求解失败: %v", req.Param, v, err))
+			writeError(c, http.StatusBadRequest, fmt.Sprintf("参数 %s=%v 求解失败: %v", req.Param, v, err))
 			return
 		}
 		bestPerGen := make([]float64, len(result.Generations))
@@ -182,13 +171,13 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 			"bestPerGen":   bestPerGen,
 		})
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"results": results})
+	writeJSON(c, http.StatusOK, map[string]any{"results": results})
 }
 
 // decodeBody 解析 JSON 请求体，失败时写出 400 并返回错误。
-func decodeBody(w http.ResponseWriter, r *http.Request, v any) error {
-	if err := json.NewDecoder(r.Body).Decode(v); err != nil {
-		writeError(w, http.StatusBadRequest, "请求体解析失败: "+err.Error())
+func decodeBody(c *gin.Context, v any) error {
+	if err := json.NewDecoder(c.Request.Body).Decode(v); err != nil {
+		writeError(c, http.StatusBadRequest, "请求体解析失败: "+err.Error())
 		return err
 	}
 	return nil
