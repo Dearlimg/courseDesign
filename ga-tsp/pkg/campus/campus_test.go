@@ -1,6 +1,7 @@
 package campus
 
 import (
+	"fmt"
 	"math"
 	"testing"
 )
@@ -28,6 +29,40 @@ func TestRoadDetourAndPath(t *testing.T) {
 	}
 }
 
+func TestRoadsDoNotCrossRectangularBuildings(t *testing.T) {
+	m := Default()
+	var checked int
+	for _, area := range m.Areas {
+		if area.Kind != "building" && area.Kind != "dorm" && area.Kind != "food" {
+			continue
+		}
+		var x, y, w, h, back float64
+		count, _ := fmt.Sscanf(
+			area.Path,
+			"M%f %fh%fv%fh%fZ",
+			&x, &y, &w, &h, &back,
+		)
+		if count != 5 {
+			continue
+		}
+		checked++
+		for _, road := range m.Roads {
+			a, b := m.Nodes[road.From], m.Nodes[road.To]
+			for i := 1; i < 100; i++ {
+				fraction := float64(i) / 100
+				px, py := a.X+(b.X-a.X)*fraction, a.Y+(b.Y-a.Y)*fraction
+				inside := px > x && px < x+w && py > y && py < y+h
+				if inside {
+					t.Fatalf("road %d→%d crosses building %s", a.ID, b.ID, area.Path)
+				}
+			}
+		}
+	}
+	if checked == 0 {
+		t.Fatal("building geometry was not checked")
+	}
+}
+
 func TestEntrancesDifferFromJunctions(t *testing.T) {
 	m := Map{
 		Places: []Place{{ID: 0, NodeID: 1, X: 0, Y: 0}, {ID: 1, NodeID: 3, X: 20, Y: 0}},
@@ -51,6 +86,12 @@ func TestWestCampusRouteGeometry(t *testing.T) {
 	m := Default()
 	if len(m.Nodes) <= len(m.Places) || len(m.Areas) == 0 {
 		t.Fatal("missing detailed campus dataset")
+	}
+	// A direct gym-to-track chord crosses the sports ground; roads must go around it.
+	gym, track := m.Places[8], m.Places[21]
+	chord := math.Hypot(gym.X-track.X, gym.Y-track.Y) * m.MetersPerUnit
+	if m.Distances[gym.ID][track.ID] <= chord*1.4 {
+		t.Fatal("route cuts across the sports ground")
 	}
 	for _, from := range m.Places {
 		for _, to := range m.Places {

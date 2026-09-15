@@ -73,3 +73,70 @@
 .order-cards{grid-template-columns:1fr;max-height:none;gap:12px}
 .crate{right:12px;bottom:12px;width:auto}.crate-text,.crate-items{display:none}}
 @media(prefers-reduced-motion:reduce){.order-card,.crate-box i{transition:none}.crate-items .chip{animation:none}}
+
+/* West-campus atlas: independent vector geometry, shared with the road solver. */
+.atlas-layout{grid-template-columns:minmax(0,1.8fr) minmax(230px,1fr);gap:22px;align-items:start}
+.map-source{white-space:nowrap;font-size:12px;text-decoration:none;padding:9px 13px;border:1px solid #e7dfc8;border-radius:8px}
+.map-shell{position:relative;border:1px solid #dbe1d8;border-radius:18px;overflow:hidden;background:#f5f7f1;min-width:0}
+.map-heading{display:flex;justify-content:space-between;align-items:center;padding:17px 20px;background:#fffef9;border-bottom:1px solid #e3e5da}
+.map-heading strong{font-size:16px}.map-heading small{display:block;font-size:11px;color:#8b8f7b;margin-top:5px}
+.map-tag{font-size:10px;color:#697b5c;background:#eaf0df;border-radius:12px;padding:5px 9px}
+.map-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:10px 12px;background:#fffef9;border-bottom:1px solid #e3e5da}
+.map-toolbar select{flex:1;min-width:135px;max-width:260px;font-size:12px;padding:8px}
+.map-toolbar button{font-size:12px;padding:8px 10px;white-space:nowrap}
+.map-stage{position:relative;overflow:hidden}
+#campusMap{height:720px;width:100%;display:block;border:0;border-radius:0;background:#edf1e8;cursor:grab;touch-action:pan-y}
+#campusMap.map-zoomed{touch-action:none}
+#campusMap.dragging{cursor:grabbing}
+#campusMap .map-ground{fill:#edf1e8}
+#campusMap .area-boundary{fill:#f4f3e9;stroke:#c5d1c0;stroke-width:3}
+#campusMap .area-green{fill:#cae3b8;stroke:#bed7ad;stroke-width:1}
+#campusMap .area-water{fill:#9bcbdc;stroke:#7eb5ca;stroke-width:3}
+#campusMap .area-plaza{fill:#dfd6bf;stroke:#c9bfa6;stroke-width:2}
+#campusMap .area-building{fill:#c8dce7;stroke:#a7bfcd;stroke-width:2}
+#campusMap .area-dorm{fill:#e0d8c8;stroke:#c6bba9;stroke-width:2}
+#campusMap .area-food{fill:#ead1ac;stroke:#d2af7a;stroke-width:2}
+#campusMap .area-track{fill:#d79d88;stroke:#be8571;stroke-width:2}
+#campusMap .area-field{fill:#accba5;stroke:#f7eee0;stroke-width:3}
+#campusMap .area-court{fill:#b2d3bd;stroke:#f6f5df;stroke-width:4}
+#campusMap .pitch-mark{fill:none;stroke:#f5f7dd;stroke-width:2}
+#campusMap .road-outline{stroke:#d9dacd;stroke-width:17;stroke-linecap:round}
+#campusMap .road-surface{stroke:#fffef7;stroke-width:11;stroke-linecap:round}
+#campusMap .area-label{font:20px 'Microsoft YaHei',sans-serif;fill:#97957e;letter-spacing:2px;pointer-events:none}
+#campusMap .label-district{font-size:24px;fill:#8b9b80;letter-spacing:5px}
+#campusMap .label-water{fill:#5f98ab;font-size:22px;letter-spacing:4px}
+#campusMap .label-minor{font-size:18px}
+#campusMap .delivery-route{stroke:#d79520;stroke-width:8;fill:none;stroke-linejoin:round;stroke-linecap:round;opacity:.85}
+#campusMap .route-focused{stroke:#cd5429;stroke-width:12;opacity:1}
+#campusMap .map-poi{cursor:pointer;outline:none}
+#campusMap .poi-dot{fill:#fdfbf3;stroke:#6b8d93;stroke-width:3}
+#campusMap .poi-depot .poi-dot{fill:#333e35;stroke:#fffef5;stroke-width:3}
+#campusMap .is-selected .poi-dot{fill:#f6c144;stroke:#a67115}
+#campusMap .poi-halo{fill:#f8d57e;fill-opacity:.45;stroke:#d49520;stroke-width:2}
+#campusMap .poi-label{font:26px 'Microsoft YaHei',sans-serif;fill:#415e66;paint-order:stroke;stroke:#f8f8ed;stroke-width:5;stroke-linejoin:round;pointer-events:none}
+#campusMap .is-selected .poi-label{font-weight:700;fill:#725218}
+#campusMap .map-poi:focus .poi-dot,#campusMap .map-poi:hover .poi-dot{stroke:#da7d1c;stroke-width:5}
+#campusMap .poi-glyph{font:18px 'Microsoft YaHei',sans-serif;fill:#5f787b;pointer-events:none}
+#campusMap .poi-depot .poi-glyph{fill:#fff8df}
+#campusMap .is-selected .poi-glyph{fill:#644510;font-weight:700}
+#campusMap .poi-badge{fill:#fff5d7;stroke:#ccab5e;stroke-width:1}
+#campusMap .poi-count{font:16px 'Microsoft YaHei',sans-serif;fill:#8d651d;pointer-events:none}
+.map-north{position:absolute;top:16px;right:17px;color:#5d7256;text-align:center;font-size:14px;line-height:1.3;background:#fffff6d9;border-radius:8px;padding:8px 11px;pointer-events:none}
+.map-zoom-level{position:absolute;bottom:12px;left:12px;font-size:11px;color:#6b735d;background:#fffff6df;padding:5px 9px;border-radius:7px;pointer-events:none}
+.map-bottom{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;font-size:10px;color:#81876f;background:#fffef9;flex-wrap:wrap}
+.map-bottom label{display:flex;flex-direction:row;align-items:center;gap:6px;cursor:pointer}.map-bottom input{width:auto}
+.atlas-legend{padding:0 14px 12px;margin:0;background:#fffef9;gap:14px}
+.atlas-legend span{display:inline-flex;align-items:center;gap:5px}.atlas-legend i{display:inline-block;width:9px;height:9px;border-radius:50%}
+.key-depot{background:#333e35}.key-selected{background:#f6c144}.key-place{background:white;border:1px solid #6b8d93}.atlas-legend i.key-route{width:17px;height:3px;border-radius:1px;background:#d79520}
+.route-panel{background:transparent;min-width:0}.place-inspector{padding:20px;background:#f5f4e9;border:1px solid #e7e3d1;border-radius:14px}
+.place-inspector .eyebrow{font-size:10px;letter-spacing:2px}.place-inspector h3{margin:10px 0;font-size:18px}.place-inspector p{font-size:12px;line-height:1.8;color:#7c7c67;overflow-wrap:anywhere}
+.place-inspector button{font-size:12px;width:100%;margin-top:8px}.route-itinerary{margin-top:23px}
+.route-itinerary #stopList{max-height:480px;overflow:auto;padding-left:25px}.route-itinerary li::marker{color:#ba8c27;font-weight:700}
+.route-itinerary #stopList button{padding:0;border:0;background:transparent;text-align:left;font-size:13px;color:#495646;line-height:1.6}
+.route-itinerary #stopList small{display:block;color:#93927e;font-size:11px;line-height:1.8;overflow-wrap:anywhere}
+.route-note{font-size:11px;line-height:1.9;color:#93927e;margin-top:20px}
+.order-card .foot button.place{background:transparent;border:0;padding:0;text-align:left;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:4px}
+.map-shell.map-expanded{position:fixed;inset:16px;z-index:100;box-shadow:0 0 0 30px #2228;display:flex;flex-direction:column}
+.map-expanded .map-stage{flex:1;min-height:0}.map-expanded #campusMap{height:100%}.map-expanded .map-toolbar select{max-width:360px}
+@media(max-width:1100px){.atlas-layout{grid-template-columns:1fr}.route-panel{display:grid;grid-template-columns:1fr 1fr;gap:20px}.route-itinerary{margin-top:0}.route-note{grid-column:1/-1}.map-stage #campusMap{height:740px}.map-expanded .map-stage #campusMap{height:100%}}
+@media(max-width:700px){.route-panel{display:block}.route-itinerary{margin-top:18px}.map-stage #campusMap{height:620px}.map-toolbar{gap:5px}.map-toolbar select{flex-basis:60%;max-width:none}.map-source{padding:7px;font-size:11px}.map-heading{padding:13px}.map-shell.map-expanded{inset:6px}.map-bottom>span{display:none}}

@@ -92,6 +92,19 @@ func TestPlanConstraintsAndReproducibility(t *testing.T) {
 	if math.Abs(distance-a.Metrics.DistanceMeters) > 0.001 {
 		t.Fatal("displayed path differs from optimization distance")
 	}
+	var legDistance float64
+	for i, leg := range a.Legs {
+		if leg.From != a.Stops[i] || leg.To != a.Stops[(i+1)%len(a.Stops)] {
+			t.Fatal("leg sequence differs from stop sequence")
+		}
+		legDistance += leg.DistanceMeters
+		if leg.RoadPath[0] != m.Places[leg.From].NodeID {
+			t.Fatal("leg begins at the wrong entrance")
+		}
+	}
+	if math.Abs(legDistance-distance) > 0.001 {
+		t.Fatal("leg totals differ from trip distance")
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	if _, err := Plan(ctx, req); err == nil {
@@ -103,6 +116,14 @@ func TestPlanConstraintsAndReproducibility(t *testing.T) {
 	r, err := Plan(context.Background(), req)
 	if err != nil || len(r.Selected) != 0 {
 		t.Fatal("overweight orders accepted")
+	}
+}
+
+func TestRejectPreviousCampusVersion(t *testing.T) {
+	req := planFixture()
+	req.Batch.MapVersion = "xupt-simulation-v1"
+	if _, err := Plan(context.Background(), req); err == nil {
+		t.Fatal("old IDs silently remapped to new campus")
 	}
 }
 

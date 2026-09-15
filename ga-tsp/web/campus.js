@@ -1,4 +1,6 @@
 import { csv, download } from './export.js';
+import { CampusMap } from './campus-map.js';
+let atlas, focusedPlace = 0;
 
 const $ = id => document.getElementById(id);
 const money = value => (value / 100).toFixed(2);
@@ -138,10 +140,12 @@ function renderOrders() {
     const metric = (label, value) => { const box = node('div','','stat'); const v = node('b', value, 'v'); box.append(node('span', label, 'k'), v); return [box, v]; };
     const [weightBox, weightValue] = metric('标准重量', `${order.weightGrams} g`);
     const [feeBox, feeValue] = metric('价值收益', `¥${money(order.deliveryFeeCents)}`);
-    const [distanceBox, distanceValue] = metric('配送距离', meters(distanceOf(order)));
+    const [distanceBox, distanceValue] = metric('距取餐点约', meters(distanceOf(order)));
     stats.append(weightBox, feeBox, distanceBox);
     const foot = document.createElement('div'); foot.className = 'foot';
-    const place = node('span', `送达 ${placeName(order)}`, 'place');
+    const place = node('button', `送达 ${placeName(order)} ↗`, 'place');
+    place.title = '在校园地图中定位';
+    place.onclick = () => { atlas.focusPlace(order.destinationId); $('route').scrollIntoView({behavior:'smooth'}); };
     const remove = node('button','删除','remove');
     remove.onclick = () => { batch.orders = batch.orders.filter(o => o !== order); renderOrders(); invalidate(); };
     foot.append(place, remove);
@@ -184,27 +188,43 @@ function renderOrders() {
   batchSummary(); drawMap();
 }
 function drawMap() {
-  if (!map) return;
-  const svg = $('campusMap'); svg.replaceChildren();
-  const defs = svgNode('defs'), marker = svgNode('marker',{id:'arrow',viewBox:'0 0 10 10',refX:8,refY:5,markerWidth:4,markerHeight:4,orient:'auto-start-reverse'});
-  marker.append(svgNode('path',{d:'M 0 0 L 10 5 L 0 10 z',fill:'#9f7700'})); defs.append(marker); svg.append(defs);
-  for (const road of map.roads) {
-    const a=map.places[road.from],b=map.places[road.to];
-    svg.append(svgNode('line',{x1:a.x,y1:a.y,x2:b.x,y2:b.y,class:'road'}));
-  }
-  if (result) {
-    const path=result.roadPath.map(id => `${map.places[id].x},${map.places[id].y}`).join(' ');
-    svg.append(svgNode('polyline',{points:path,class:'route-line','marker-mid':'url(#arrow)','marker-end':'url(#arrow)'}));
-  }
-  const selected = new Set(result?.stops || []), counts = new Map();
-  for (const order of batch?.orders || []) counts.set(order.destinationId,(counts.get(order.destinationId)||0)+1);
+  atlas?.update(batch,result);
+  if (map) showPlace(map.places[focusedPlace]);
+}
+function showPlace(place) {
+  focusedPlace = place.id;
+  $('mapPlace').value = place.id;
+  $('mapPlaceName').textContent = place.name;
+  const orders = (batch?.orders || []).filter(order => order.destinationId === place.id);
+  const chosen = (result?.selected || []).filter(order => order.destinationId === place.id);
+  $('mapPlaceInfo').textContent = '距取餐点约 ' + Math.round(map.depotMeters[place.id]) + ' 米 · ' + orders.length + ' 笔候选订单 · ' + chosen.length + ' 笔已选。' + (orders.length ? ' 订单：' + orders.map(order => order.id).join('、') : '');
+}
+function setupMap() {
   for (const place of map.places) {
-    const group=svgNode('g');
-    group.append(svgNode('circle',{cx:place.x,cy:place.y,r:place.id === 0 ? 15 : 12,class:`place ${place.id===0?'depot':selected.has(place.id)?'active':''}`}));
-    group.append(svgNode('text',{x:place.x,y:place.y+37,'text-anchor':'middle'},place.name));
-    if (counts.has(place.id)) group.append(svgNode('text',{x:place.x,y:place.y-25,'text-anchor':'middle'},`${counts.get(place.id)} 单`));
-    svg.append(group);
+    const option = node('option',place.name); option.value=place.id; $('mapPlace').append(option);
   }
+  atlas = new CampusMap($('campusMap'),map,showPlace);
+  $('mapZoomIn').onclick=()=>atlas.zoom(1.35);
+  $('mapZoomOut').onclick=()=>atlas.zoom(1/1.35);
+  $('mapFit').onclick=()=>atlas.fit();
+  $('mapLocate').onclick=()=>atlas.focusPlace(Number($('mapPlace').value));
+  $('mapOnlyOrders').onchange=()=>{atlas.onlyOrders=$('mapOnlyOrders').checked;atlas.render();};
+  let savedMapView;
+  const toggleExpanded = () => {
+    const expanded=$('mapShell').classList.toggle('map-expanded');
+    if (expanded) { savedMapView={...atlas.view}; atlas.zoom(2.5); }
+    else if (savedMapView) { atlas.view=savedMapView; atlas.applyView(); }
+    $('mapExpand').textContent=expanded?'收起大图':'展开大图';
+    $('mapExpand').setAttribute('aria-expanded',String(expanded));
+  };
+  $('mapExpand').onclick=toggleExpanded;
+  document.addEventListener('keydown',event=>{if(event.key==='Escape' && $('mapShell').classList.contains('map-expanded'))toggleExpanded();});
+  $('mapAddOrder').onclick=()=>{
+    batch ||= {mapVersion:map.version,seed:0,scenario:'manual',orders:[]};
+    if(batch.orders.length>=50)return tell('最多支持 50 笔校园订单。',true);
+    batch.orders.push({id:'M'+Date.now(),destinationId:focusedPlace,weightGrams:500,deliveryFeeCents:600,serviceSeconds:60});
+    invalidate();renderOrders();tell('已添加到 '+map.places[focusedPlace].name+' 的订单。');
+  };
 }
 // ===== 配送箱：自动选单后，选中的卡片依次飞入箱中 =====
 const crateBox = () => $('crate');
@@ -271,7 +291,7 @@ function renderResult(plan) {
   const m=plan.metrics;
   $('metrics').replaceChildren(...[
     ['配送收入',`¥${money(m.incomeCents)}`,'所选订单的骑手配送费'],['预计成本',`¥${money(m.costCents)}`,'里程成本 + 时间成本'],
-    ['预计净收益',`¥${money(m.netCents)}`,`${plan.selected.length} 笔订单`],['配送里程',`${(m.distanceMeters/1000).toFixed(2)} km`,'沿仿真道路，含返站'],
+    ['预计净收益',`¥${money(m.netCents)}`,`${plan.selected.length} 笔订单`],['配送里程',`${(m.distanceMeters/1000).toFixed(2)} km`,'沿校园路网估算，含返站'],
     ['预计耗时',`${m.minutes.toFixed(1)} 分钟`,`上限 ${plan.input.maxMinutes} 分钟，含交付`],['餐箱载重',`${m.weightGrams} g`,`上限 ${plan.input.capacityGrams} g`],
   ].map(([label,value,note]) => { const el=node('div','','stat'); el.append(node('small',label),node('strong',value),node('small',note)); return el; }));
   $('selectedOrders').replaceChildren(...plan.selected.map(o => node('span',`${menuFor(o).icon} ${o.id} · ${map.places[o.destinationId].name}`)));
@@ -282,7 +302,13 @@ function renderResult(plan) {
   const stops=plan.stops.length > 1 ? [...plan.stops,0] : [0];
   $('stopList').replaceChildren(...stops.map((id,index) => {
     const orders=plan.selected.filter(o => o.destinationId===id).map(o=>o.id).join('、');
-    return node('li',`${map.places[id].name}${index===stops.length-1 && index>0?' · 返站':orders?' · '+orders:''}`);
+    const item=node('li','');
+    const button=node('button',map.places[id].name+(index===stops.length-1 && index>0?' · 返站':''));
+    button.onclick=()=>{atlas.focusPlace(id,false);if(index>0)atlas.focusLeg(index-1);};
+    item.append(button);
+    if(index>0 && plan.legs?.[index-1])item.append(node('small','本段约 '+Math.round(plan.legs[index-1].distanceMeters)+' 米'));
+    if(orders && !(index===stops.length-1 && index>0))item.append(node('small',orders));
+    return item;
   }));
   drawMap(); drawCurve(plan); updateButtons();
 }
@@ -365,12 +391,16 @@ async function start() {
     const {user}=await request('/api/auth/me');$('accountName').textContent=user.username;
     storageKey=`simple_tuan.user.${user.id}.campus.v1`;
     map=await request('/api/campus/map');$('mapNotice').textContent=map.notice;
+    if (!Array.isArray(map.nodes) || !map.width || !map.places.every(place=>Number.isInteger(place.nodeId))) {
+      throw Error('校园地图需要新版后端，请重新编译并启动 Go 服务。');
+    }
+    setupMap();
     try {
       const saved=JSON.parse(localStorage.getItem(storageKey));
       if(saved?.batch?.mapVersion===map.version && Array.isArray(saved.batch.orders) && saved.batch.orders.length<=50) {
         batch=saved.batch;
         for(const id of settings)if(saved.settings?.[id]!==undefined)$(id).value=saved.settings[id];
-      }
+      } else if(saved?.batch) { tell('地图已升级为长安校区西区，旧版地点编号不能直接沿用，请重新生成订单。'); }
     } catch { tell('本机数据读取失败，请重新生成订单。',true); }
     bind();modeHelp();renderOrders();updateButtons();
     document.body.dataset.auth='ready';$('authLoading').hidden=true;
