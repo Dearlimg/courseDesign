@@ -1,6 +1,6 @@
 // Package api 提供 GA-TSP 系统的 REST 接口：
 // 实例管理（内置/随机）、GA 求解、参数扫描对比实验。
-package api
+package controller
 
 import (
 	"encoding/json"
@@ -192,16 +192,4 @@ func decodeBody(w http.ResponseWriter, r *http.Request, v any) error {
 		return err
 	}
 	return nil
-}
-
-// writeJSON 写出 JSON 响应。
-func writeJSON(w http.ResponseWriter, status int, v any) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(v)
-}
-
-// writeError 写出统一的错误响应。
-func writeError(w http.ResponseWriter, status int, msg string) {
-	writeJSON(w, status, map[string]string{"error": msg})
 }

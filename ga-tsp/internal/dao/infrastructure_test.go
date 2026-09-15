@@ -1,4 +1,4 @@
-package auth
+package dao
 
 import (
 	"context"
@@ -26,8 +26,13 @@ func TestInfrastructure(t *testing.T) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	users, sessions, err := Open(ctx, c)
+	users, err := NewMySQLUsers(ctx, c.MySQLAddr, c.MySQLUser, c.MySQLPassword, c.Database, c.CreateDatabase)
 	if err != nil {
+		t.Fatal(err)
+	}
+	sessions, err := NewRedisSessions(ctx, c.RedisAddr, c.RedisPassword)
+	if err != nil {
+		users.Close()
 		t.Fatal(err)
 	}
 	defer users.Close()

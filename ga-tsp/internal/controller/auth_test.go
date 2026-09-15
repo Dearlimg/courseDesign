@@ -1,4 +1,4 @@
-package auth
+package controller
 
 import (
 	"context"
@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
+	"simple_tuan/internal/logic"
 	"simple_tuan/internal/models"
 )
 
@@ -24,7 +25,7 @@ func (m *memoryUsers) Create(_ context.Context, name string, hash []byte) (model
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if _, ok := m.accounts[name]; ok {
-		return models.User{}, ErrDuplicate
+		return models.User{}, logic.ErrDuplicate
 	}
 	u := models.User{ID: int64(len(m.accounts) + 1), Username: name}
 	m.accounts[name] = models.Account{User: u, PasswordHash: append([]byte{}, hash...)}
@@ -35,7 +36,7 @@ func (m *memoryUsers) Find(_ context.Context, name string) (models.Account, erro
 	defer m.mu.Unlock()
 	a, ok := m.accounts[name]
 	if !ok {
-		return a, ErrNotFound
+		return a, logic.ErrNotFound
 	}
 	return a, nil
 }
@@ -68,7 +69,7 @@ func (m *memorySessions) Get(_ context.Context, token string) (models.User, erro
 	}
 	s, ok := m.items[token]
 	if !ok || s.expires.Before(time.Now()) {
-		return models.User{}, ErrNotFound
+		return models.User{}, logic.ErrNotFound
 	}
 	return s.user, nil
 }
@@ -101,8 +102,7 @@ func request(h http.Handler, method, path, body string, cookie *http.Cookie) *ht
 func TestAuthenticationLifecycle(t *testing.T) {
 	users := &memoryUsers{accounts: map[string]models.Account{}}
 	sessions := &memorySessions{items: map[string]memorySession{}}
-	s := New(users, sessions, false)
-	h := s.Handler(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(204) }))
+	h := NewApp(logic.NewAuth(users, sessions), false, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(204) }))
 	body := `{"username":"Test_User","password":"test-password-123"}`
 	if w := request(h, "GET", "/api/dispatch/anything", "", nil); w.Code != 401 {
 		t.Fatal(w.Code)
@@ -164,7 +164,7 @@ func TestAuthenticationLifecycle(t *testing.T) {
 }
 func TestAuthValidationAndOrigin(t *testing.T) {
 	sessions := &memorySessions{items: map[string]memorySession{}}
-	h := New(&memoryUsers{accounts: map[string]models.Account{}}, sessions, true).Handler(http.NotFoundHandler())
+	h := NewApp(logic.NewAuth(&memoryUsers{accounts: map[string]models.Account{}}, sessions), true, http.NotFoundHandler())
 	for _, body := range []string{`{"username":"a","password":"12345678"}`, `{"username":"valid","password":"short"}`, `{"username":"bad' OR 1=1","password":"12345678"}`, `{}`} {
 		if w := request(h, "POST", "/api/auth/register", body, nil); w.Code != 400 {
 			t.Fatal(w.Code)

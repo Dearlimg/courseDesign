@@ -1,11 +1,11 @@
-package auth
+package controller
 
 import (
 	"net/http"
 	"os"
 	"testing"
 
-	"simple_tuan/internal/api"
+	"simple_tuan/internal/logic"
 	"simple_tuan/internal/models"
 )
 
@@ -16,9 +16,9 @@ func TestBrowserPreview(t *testing.T) {
 	}
 	users := &memoryUsers{accounts: map[string]models.Account{}}
 	sessions := &memorySessions{items: map[string]memorySession{}}
-	mux := api.NewMux()
+	mux := NewMux()
 	mux.Handle("/", http.FileServer(http.Dir("../../web")))
-	server := &http.Server{Addr: "127.0.0.1:8081", Handler: New(users, sessions, false).Handler(mux)}
+	server := &http.Server{Addr: "127.0.0.1:8081", Handler: NewApp(logic.NewAuth(users, sessions), false, mux)}
 	t.Cleanup(func() { server.Close() })
 	t.Log("TEST-ONLY browser fixture: http://localhost:8081 (in-memory accounts, no database claim)")
 	if err := server.ListenAndServe(); err != http.ErrServerClosed {

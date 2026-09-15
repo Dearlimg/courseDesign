@@ -9,9 +9,10 @@ import (
 	"os"
 	"time"
 
-	"simple_tuan/internal/api"
-	"simple_tuan/internal/auth"
 	"simple_tuan/internal/config"
+	"simple_tuan/internal/controller"
+	"simple_tuan/internal/dao"
+	"simple_tuan/internal/logic"
 )
 
 func main() {
@@ -23,15 +24,21 @@ func main() {
 		log.Fatal(err)
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
-	users, sessions, err := auth.Open(ctx, settings)
+	users, err := dao.NewMySQLUsers(ctx, settings.MySQLAddr, settings.MySQLUser, settings.MySQLPassword, settings.Database, settings.CreateDatabase)
+	if err != nil {
+		cancel()
+		log.Fatal(err)
+	}
+	sessions, err := dao.NewRedisSessions(ctx, settings.RedisAddr, settings.RedisPassword)
 	cancel()
 	if err != nil {
+		users.Close()
 		log.Fatal(err)
 	}
 	defer users.Close()
 	defer sessions.Close()
-	login := auth.New(users, sessions, settings.CookieSecure)
-	mux := api.NewMux()
+	svc := logic.NewAuth(users, sessions)
+	mux := controller.NewMux()
 	mux.Handle("/", http.FileServer(http.Dir("web")))
 
 	port := os.Getenv("PORT")
@@ -40,7 +47,7 @@ func main() {
 	}
 	srv := &http.Server{
 		Addr:         ":" + port,
-		Handler:      login.Handler(mux),
+		Handler:      controller.NewApp(svc, settings.CookieSecure, mux),
 		ReadTimeout:  30 * time.Second,
 		WriteTimeout: 120 * time.Second, // 参数扫描请求耗时较长
 	}
