@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"gatsp/internal/tsp"
+	"simple_tuan/internal/tsp"
 )
 
 func TestEncodingVariants(t *testing.T) {

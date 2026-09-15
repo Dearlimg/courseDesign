@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"math"
 
-	"gatsp/internal/dispatch"
-	"gatsp/internal/ga"
-	"gatsp/internal/optimization"
+	"simple_tuan/internal/dispatch"
+	"simple_tuan/internal/ga"
+	"simple_tuan/internal/optimization"
 )
 
 type Group struct {

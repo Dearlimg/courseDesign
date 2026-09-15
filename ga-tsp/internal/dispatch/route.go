@@ -6,8 +6,8 @@ import (
 	"slices"
 	"strings"
 
-	"gatsp/internal/ga"
-	"gatsp/internal/tsp"
+	"simple_tuan/internal/ga"
+	"simple_tuan/internal/tsp"
 )
 
 type Point struct {

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"gatsp/internal/dispatch"
+	"simple_tuan/internal/dispatch"
 )
 
 func TestDecisionFlow(t *testing.T) {

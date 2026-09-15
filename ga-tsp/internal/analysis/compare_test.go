@@ -6,8 +6,8 @@ import (
 	"math"
 	"testing"
 
-	"gatsp/internal/dispatch"
-	"gatsp/internal/ga"
+	"simple_tuan/internal/dispatch"
+	"simple_tuan/internal/ga"
 )
 
 func TestSummary(t *testing.T) {

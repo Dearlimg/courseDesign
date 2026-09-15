@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"gatsp/internal/dispatch"
+	"simple_tuan/internal/dispatch"
 )
 
 func registerDispatch(mux *http.ServeMux) {

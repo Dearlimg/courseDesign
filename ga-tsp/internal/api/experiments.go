@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	"gatsp/internal/optimization"
+	"simple_tuan/internal/optimization"
 )
 
 type experimentRequest struct {

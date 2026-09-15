@@ -12,7 +12,7 @@ import (
 	"net"
 	"time"
 
-	"gatsp/internal/config"
+	"simple_tuan/internal/config"
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/redis/go-redis/v9"

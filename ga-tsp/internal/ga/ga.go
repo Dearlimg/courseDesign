@@ -11,7 +11,7 @@ import (
 	"sort"
 	"time"
 
-	"gatsp/internal/tsp"
+	"simple_tuan/internal/tsp"
 )
 
 // Params 是 GA 求解参数。

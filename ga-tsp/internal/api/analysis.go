@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"gatsp/internal/analysis"
+	"simple_tuan/internal/analysis"
 )
 
 func handleCompare(w http.ResponseWriter, r *http.Request) {

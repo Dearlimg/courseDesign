@@ -7,7 +7,7 @@ import (
 	"math"
 	"strings"
 
-	"gatsp/internal/optimization"
+	"simple_tuan/internal/optimization"
 )
 
 type Order struct {

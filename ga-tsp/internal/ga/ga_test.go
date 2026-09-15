@@ -6,7 +6,7 @@ import (
 	"slices"
 	"testing"
 
-	"gatsp/internal/tsp"
+	"simple_tuan/internal/tsp"
 )
 
 // checkPerm 校验 tour 是 0..n-1 的合法排列。

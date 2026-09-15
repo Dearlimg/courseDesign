@@ -8,7 +8,7 @@ import (
 	"sort"
 	"time"
 
-	"gatsp/internal/tsp"
+	"simple_tuan/internal/tsp"
 )
 
 func nearestTour(dm [][]float64, start int) []int {

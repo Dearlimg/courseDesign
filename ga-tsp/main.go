@@ -9,9 +9,9 @@ import (
 	"os"
 	"time"
 
-	"gatsp/internal/api"
-	"gatsp/internal/auth"
-	"gatsp/internal/config"
+	"simple_tuan/internal/api"
+	"simple_tuan/internal/auth"
+	"simple_tuan/internal/config"
 )
 
 func main() {

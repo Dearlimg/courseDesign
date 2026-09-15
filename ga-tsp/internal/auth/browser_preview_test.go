@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"gatsp/internal/api"
+	"simple_tuan/internal/api"
 )
 
 // TestBrowserPreview is an opt-in UI fixture, never used by the application.

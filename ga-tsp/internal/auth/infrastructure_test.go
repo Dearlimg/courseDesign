@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"gatsp/internal/config"
+	"simple_tuan/internal/config"
 	"golang.org/x/crypto/bcrypt"
 )
 

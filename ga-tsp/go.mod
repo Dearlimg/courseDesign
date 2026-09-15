@@ -1,4 +1,4 @@
-module gatsp
+module simple_tuan
 
 go 1.26.1
 

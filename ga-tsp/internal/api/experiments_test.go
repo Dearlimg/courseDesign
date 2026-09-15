@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"gatsp/internal/optimization"
+	"simple_tuan/internal/optimization"
 )
 
 func TestExperimentEndpoints(t *testing.T) {
