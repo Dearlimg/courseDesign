@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"simple_tuan/internal/ga"
-	"simple_tuan/internal/tsp"
+	"simple_tuan/pkg/ga"
+	"simple_tuan/pkg/tsp"
 )
 
 // NewMux 构建路由并注册所有 API 端点。

@@ -7,7 +7,7 @@ import (
 	"math"
 	"strings"
 
-	"simple_tuan/internal/optimization"
+	"simple_tuan/pkg/optimization"
 )
 
 type Order struct {

@@ -7,8 +7,8 @@ import (
 	"math"
 
 	"simple_tuan/internal/dispatch"
-	"simple_tuan/internal/ga"
-	"simple_tuan/internal/optimization"
+	"simple_tuan/pkg/ga"
+	"simple_tuan/pkg/optimization"
 )
 
 type Group struct {

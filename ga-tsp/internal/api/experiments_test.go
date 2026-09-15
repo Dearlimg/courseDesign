@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"simple_tuan/internal/optimization"
+	"simple_tuan/pkg/optimization"
 )
 
 func TestExperimentEndpoints(t *testing.T) {

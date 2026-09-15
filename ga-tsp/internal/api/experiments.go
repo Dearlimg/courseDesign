@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	"simple_tuan/internal/optimization"
+	"simple_tuan/pkg/optimization"
 )
 
 type experimentRequest struct {

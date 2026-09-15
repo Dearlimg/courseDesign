@@ -6,8 +6,8 @@ import (
 	"slices"
 	"strings"
 
-	"simple_tuan/internal/ga"
-	"simple_tuan/internal/tsp"
+	"simple_tuan/pkg/ga"
+	"simple_tuan/pkg/tsp"
 )
 
 type Point struct {

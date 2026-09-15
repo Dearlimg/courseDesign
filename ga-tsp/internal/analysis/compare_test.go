@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"simple_tuan/internal/dispatch"
-	"simple_tuan/internal/ga"
+	"simple_tuan/pkg/ga"
 )
 
 func TestSummary(t *testing.T) {
