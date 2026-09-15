@@ -402,3 +402,12 @@ textarea {
 .demo-guide strong {
   font-size: 14px;
 }
+body[data-auth="pending"] > .sidebar,
+body[data-auth="pending"] > main {
+  display: none;
+}
+#authLoading {
+  margin: 12vh auto;
+  text-align: center;
+  color: #7a7058;
+}

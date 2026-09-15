@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>骑迹 · 登录配送决策工作台</title>
+    <link rel="stylesheet" href="/auth.css" />
+  </head>
+  <body>
+    <header class="auth-header">
+      <a class="auth-brand" href="/auth.html"
+        ><span class="brand-symbol">骑</span>骑迹<span class="brand-caption"
+          >配送决策工作台</span
+        ></a
+      ><span class="header-tag">让配送更有序</span>
+    </header>
+    <main class="auth-layout">
+      <section class="auth-story">
+        <div class="story-tag"><span></span> 面向配送站的智能决策助手</div>
+        <h1>每一单好选择，<br />每一趟好路线。</h1>
+        <p class="story-description">
+          从餐箱里的订单组合，到园区里的配送顺序。<br />让算法替你多想一步，让调度更从容。
+        </p>
+        <div class="delivery-art" aria-label="园区配送路线插画" role="img">
+          <svg viewBox="0 0 580 285" xmlns="http://www.w3.org/2000/svg">
+            <path
+              d="M15 80 L560 80 M15 150 L560 150 M15 220 L560 220 M90 20 L90 270 M230 20 L230 270 M370 20 L370 270 M510 20 L510 270"
+              stroke="#eadba9"
+              stroke-width="1"
+            />
+            <rect
+              x="108"
+              y="100"
+              width="82"
+              height="43"
+              rx="10"
+              fill="#f4dc85"
+            />
+            <rect
+              x="252"
+              y="172"
+              width="86"
+              height="35"
+              rx="10"
+              fill="#f4dc85"
+            />
+            <rect
+              x="393"
+              y="32"
+              width="68"
+              height="33"
+              rx="10"
+              fill="#f4dc85"
+            />
+            <path
+              d="M80 215 C80 120 160 155 205 110 S305 50 350 110 S435 205 505 105"
+              fill="none"
+              stroke="#242321"
+              stroke-width="3"
+              stroke-dasharray="8 8"
+            />
+            <circle cx="80" cy="215" r="22" fill="#252422" />
+            <path
+              d="M70 219V205h20v14M75 202v-5h10v5"
+              stroke="#ffd33d"
+              stroke-width="3"
+              fill="none"
+            />
+            <circle
+              cx="350"
+              cy="110"
+              r="15"
+              fill="#fff"
+              stroke="#252422"
+              stroke-width="3"
+            />
+            <path
+              d="m343 110 5 5 9-11"
+              stroke="#252422"
+              stroke-width="3"
+              fill="none"
+            />
+            <circle
+              cx="505"
+              cy="105"
+              r="22"
+              fill="#ffd33d"
+              stroke="#252422"
+              stroke-width="3"
+            />
+            <path
+              d="m495 106 8 7 12-15"
+              stroke="#252422"
+              stroke-width="3"
+              fill="none"
+            />
+            <g transform="translate(212 66) rotate(-15)">
+              <rect
+                x="-27"
+                y="-29"
+                width="55"
+                height="44"
+                rx="10"
+                fill="#ffc928"
+                stroke="#252422"
+                stroke-width="3"
+              />
+              <circle
+                cx="-22"
+                cy="25"
+                r="12"
+                fill="#fff"
+                stroke="#252422"
+                stroke-width="4"
+              />
+              <circle
+                cx="26"
+                cy="25"
+                r="12"
+                fill="#fff"
+                stroke="#252422"
+                stroke-width="4"
+              />
+              <path
+                d="M-22 25 0 0l26 25M0 0l16-11"
+                fill="none"
+                stroke="#252422"
+                stroke-width="4"
+              />
+              <path d="M-9-9H10M0-19V0" stroke="#252422" stroke-width="3" />
+            </g>
+            <g font-family="sans-serif" font-size="12" fill="#655d42">
+              <text x="48" y="258">统一取餐</text>
+              <text x="322" y="151">沿途送达</text>
+              <text x="477" y="149">完成返站</text>
+            </g>
+          </svg>
+          <div class="art-note">
+            <span class="note-icon">✓</span>
+            <div>
+              <strong>这趟，安排好了</strong
+              ><small>接单组合 + 配送路线，一起考虑</small>
+            </div>
+          </div>
+        </div>
+        <div class="story-features">
+          <span><b>01</b> 智能接单</span><span><b>02</b> 路线规划</span
+          ><span><b>03</b> 方案分析</span>
+        </div>
+      </section>
+      <section class="auth-card" aria-label="账号登录与注册">
+        <div class="welcome-tag">WELCOME TO QIJI</div>
+        <h2 id="authTitle">欢迎回来</h2>
+        <p id="authSubtitle">登录账号，开始今天的配送规划。</p>
+        <div class="auth-tabs" role="tablist" aria-label="账号操作">
+          <button
+            id="loginTab"
+            role="tab"
+            aria-selected="true"
+            aria-controls="authForm"
+          >
+            账号登录</button
+          ><button
+            id="registerTab"
+            role="tab"
+            aria-selected="false"
+            aria-controls="authForm"
+          >
+            注册账号
+          </button>
+        </div>
+        <form id="authForm">
+          <label for="username">用户名</label
+          ><input
+            id="username"
+            name="username"
+            autocomplete="username"
+            placeholder="3～32 位字母、数字或下划线"
+            minlength="3"
+            maxlength="32"
+            required
+            pattern="[A-Za-z0-9_]{3,32}"
+          />
+          <label for="password">密码</label>
+          <div class="password-field">
+            <input
+              id="password"
+              name="password"
+              type="password"
+              autocomplete="current-password"
+              placeholder="至少 8 位字符"
+              minlength="8"
+              maxlength="72"
+              required
+            /><button id="showPassword" type="button" aria-label="显示密码">
+              显示
+            </button>
+          </div>
+          <div id="confirmField" hidden>
+            <label for="confirmPassword">确认密码</label
+            ><input
+              id="confirmPassword"
+              name="confirmPassword"
+              type="password"
+              autocomplete="new-password"
+              placeholder="再次输入密码"
+            />
+          </div>
+          <p id="authMessage" role="status" aria-live="polite"></p>
+          <button type="submit" id="authSubmit" class="submit-button">
+            登录工作台 <span>→</span>
+          </button>
+        </form>
+        <p class="card-note">专注每一趟配送，让好方案看得见。</p>
+      </section>
+    </main>
+    <footer>
+      骑迹 · 基于遗传算法的外卖配送决策系统<span
+        >课程设计应用 · 园区配送场景</span
+      >
+    </footer>
+    <script type="module" src="/auth.js"></script>
+  </body>
+</html>

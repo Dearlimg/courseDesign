@@ -6,7 +6,8 @@
     <title>骑迹 · 配送决策工作台</title>
     <link rel="stylesheet" href="dispatch.css" />
   </head>
-  <body>
+  <body data-auth="pending">
+    <p id="authLoading" role="status">正在验证登录…</p>
     <aside class="sidebar">
       <a class="brand" href="/">骑迹<span>Q I J I · DISPATCH</span></a>
       <p class="sidebar-note">让每一趟配送，更有章法。</p>
@@ -25,7 +26,10 @@
           <h1>把这一趟，安排好。</h1>
           <p>从订单组合到配送顺序，用遗传算法找到更好的方案。</p>
         </div>
-        <span class="pill">调度员工作台</span>
+        <div class="actions">
+          <span class="pill">调度员 · <span id="accountName"></span></span
+          ><button id="logout">退出登录</button>
+        </div>
       </header>
       <div id="notice" role="status" aria-live="polite"></div>
       <div class="demo-guide">
@@ -112,9 +116,6 @@
         >
       </footer>
     </main>
-    <script type="module" src="dispatch.js"></script>
-    <script type="module" src="selection.js"></script>
-    <script type="module" src="route.js"></script>
-    <script type="module" src="analysis.js"></script>
+    <script type="module" src="boot.js"></script>
   </body>
 </html>

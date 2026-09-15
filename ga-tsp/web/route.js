@@ -1,4 +1,12 @@
-import { $, current, api, notify, text, stats } from "./dispatch.js";
+import {
+  $,
+  current,
+  api,
+  notify,
+  text,
+  stats,
+  storageKey,
+} from "./dispatch.js";
 import { playback } from "./charts.js";
 import { configPanel } from "./config.js";
 const host = $("routeContent");
@@ -13,7 +21,7 @@ const routeParams = configPanel(host, "tsp", () => stale());
 function save() {
   try {
     localStorage.setItem(
-      "qiji.route.v1",
+      storageKey("route"),
       JSON.stringify({
         name: $("depotName").value,
         x: $("depotX").value,
@@ -26,7 +34,7 @@ function save() {
   }
 }
 try {
-  const s = JSON.parse(localStorage.getItem("qiji.route.v1"));
+  const s = JSON.parse(localStorage.getItem(storageKey("route")));
   if (s && typeof s.points === "string") {
     $("depotName").value = s.name;
     $("depotX").value = s.x;

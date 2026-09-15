@@ -1,5 +1,7 @@
 export const $ = (id) => document.getElementById(id);
 export const money = (cents) => (cents / 100).toFixed(2);
+export const storageKey = (kind) =>
+  "qiji.user." + document.documentElement.dataset.userId + "." + kind + ".v1";
 export const sample = () => ({
   capacity: 10,
   orders: [
@@ -46,7 +48,7 @@ export function validate(data) {
 }
 export let state = sample();
 try {
-  const saved = localStorage.getItem("qiji.orders.v1");
+  const saved = localStorage.getItem(storageKey("orders"));
   if (saved) state = validate(JSON.parse(saved));
 } catch {
   notify("本机保存的数据无法读取，已载入园区示例。", true);
@@ -73,7 +75,7 @@ function persist() {
   document.dispatchEvent(new Event("orderschanged"));
   try {
     state = current();
-    localStorage.setItem("qiji.orders.v1", JSON.stringify(state));
+    localStorage.setItem(storageKey("orders"), JSON.stringify(state));
     summary();
     notify("订单数据已保存。");
   } catch (e) {
@@ -157,6 +159,10 @@ export async function api(url, payload, signal) {
     signal,
   });
   const result = await response.json();
+  if (response.status === 401) {
+    location.replace("/auth.html");
+    throw Error("登录已失效");
+  }
   if (!response.ok) throw Error(result.error || "请求失败");
   return result;
 }

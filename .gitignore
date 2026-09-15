@@ -1,0 +1,12 @@
+# Local credentials and environment overrides
+.env
+.env.*
+!.env.example
+*.local.env
+secrets/
+# Local build and test artifacts
+ga-tsp/qiji.exe
+ga-tsp/qiji
+ga-tsp/*.test
+ga-tsp/coverage.out
+
