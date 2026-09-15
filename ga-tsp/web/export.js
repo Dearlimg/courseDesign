@@ -17,7 +17,7 @@ export function csv(rows) {
 }
 export function analysisRows(result) {
   const rows = [
-    ["骑迹重复实验"],
+    ["某团重复实验"],
     ["问题", result.input.problem],
     ["数值单位", result.unit],
     ["标准差", "样本标准差 n-1；单次运行记为 0"],

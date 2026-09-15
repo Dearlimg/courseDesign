@@ -172,7 +172,7 @@ $("compareCSV").onclick = () => {
     download(
       csv(analysisRows(result)),
       "text/csv;charset=utf-8",
-      "骑迹-重复实验.csv",
+      "某团-重复实验.csv",
     );
 };
 $("comparePNG").onclick = () => {
@@ -187,7 +187,7 @@ $("comparePNG").onclick = () => {
   c.font = "16px sans-serif";
   c.fillStyle = "#19382f";
   c.fillText(
-    "骑迹 · " +
+    "某团 · " +
       (result.input.problem === "tsp" ? "配送路线" : "智能接单") +
       "重复实验",
     20,
@@ -196,7 +196,7 @@ $("comparePNG").onclick = () => {
   c.font = "12px sans-serif";
   c.fillText($("compareLegend").textContent, 20, 430);
   canvas.toBlob((blob) => {
-    if (blob) download(blob, "image/png", "骑迹-平均收敛曲线.png");
+    if (blob) download(blob, "image/png", "某团-平均收敛曲线.png");
   }, "image/png");
 };
 build();

@@ -54,6 +54,6 @@ func main() {
 		ReadTimeout:  30 * time.Second,
 		WriteTimeout: 120 * time.Second, // 参数扫描请求耗时较长
 	}
-	log.Printf("骑迹配送决策系统已启动: http://localhost:%s", port)
+	log.Printf("某团配送决策系统已启动: http://localhost:%s", port)
 	log.Fatal(srv.ListenAndServe())
 }

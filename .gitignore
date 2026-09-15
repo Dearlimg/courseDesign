@@ -9,4 +9,5 @@ ga-tsp/qiji.exe
 ga-tsp/qiji
 ga-tsp/*.test
 ga-tsp/coverage.out
+ga-tsp/run*.log
 
