@@ -17,11 +17,12 @@ type City struct {
 
 // Instance 是一个 TSP 实例。
 type Instance struct {
-	Name        string  `json:"name"`
-	EdgeType    string  `json:"edgeType"`              // "att" 或 "euclid"
-	Cities      []City  `json:"cities"`
-	Optimal     float64 `json:"optimal"`               // 已知最优环游长度；0 表示未知
-	OptimalTour []int   `json:"optimalTour,omitempty"` // 已知最优回路（用于可视化对比）
+	Matrix      [][]float64 `json:"-"` // Optional trusted road distances, indexed by city ID.
+	Name        string      `json:"name"`
+	EdgeType    string      `json:"edgeType"` // "att" 或 "euclid"
+	Cities      []City      `json:"cities"`
+	Optimal     float64     `json:"optimal"`               // 已知最优环游长度；0 表示未知
+	OptimalTour []int       `json:"optimalTour,omitempty"` // 已知最优回路（用于可视化对比）
 }
 
 // Size 返回城市数量。
@@ -29,6 +30,9 @@ func (in *Instance) Size() int { return len(in.Cities) }
 
 // DistanceMatrix 计算全量距离矩阵。
 func (in *Instance) DistanceMatrix() [][]float64 {
+	if in.Matrix != nil {
+		return in.Matrix
+	}
 	n := len(in.Cities)
 	dm := make([][]float64, n)
 	for i := range dm {
