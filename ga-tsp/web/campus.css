@@ -1,8 +1,6 @@
 .campus-controls{display:flex;align-items:end;gap:16px;flex-wrap:wrap;margin:20px 0}
 .campus-controls label{display:flex;flex-direction:column;gap:8px;font-size:12px;color:#77715f;min-width:140px;flex:1}
 .campus-controls input,.campus-controls select{width:100%;min-height:42px}.campus-controls button{min-height:42px}
-.campus-table{max-height:390px;overflow:auto;margin:20px 0}.campus-table thead{position:sticky;top:0;background:#fffdf7;z-index:1}
-.campus-table input{min-width:80px}.campus-table select{min-width:130px}.campus-table tr.selected{background:#fff6cf}
 .campus-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:18px 0}.campus-metrics .stat{padding:20px;background:#faf6e7;border-radius:12px}
 .campus-metrics .stat strong{display:block;font-size:25px;margin:9px 0}.campus-metrics .stat small{display:block;color:#77715f}
 .chosen-orders{display:flex;gap:8px;flex-wrap:wrap}.chosen-orders span{padding:8px 12px;border-radius:8px;background:#fff1b4;font-size:12px}
@@ -13,5 +11,65 @@
 .legend{display:flex;gap:18px;flex-wrap:wrap;font-size:11px;color:#857c60;margin:12px 0}#stopList{padding-left:22px}#stopList li{padding:9px 0;border-bottom:1px solid #eee7d8;line-height:1.8}
 #curve{width:100%;max-height:260px;background:#fffcf4;border-radius:10px}#comparisonRuns,#excludedOrders{max-height:320px;overflow:auto;font-size:12px;line-height:1.8}
 #planStatus.stale{color:#a35b19;background:#fff3df;padding:12px;border-radius:8px}.sidebar-bottom a{color:#e0c270}.links{display:flex;gap:20px;flex-wrap:wrap}
+
+/* ===== 订单卡片：一单一张卡（点餐卡片风格）；餐品是按订单号稳定派生的仿真样例 ===== */
+.order-hint{font-size:12px;color:#77715f;margin:0 0 14px}
+.order-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(266px,1fr));gap:14px;margin:0 0 18px;max-height:640px;overflow:auto;padding:4px}
+.order-card{position:relative;display:flex;flex-direction:column;background:#fffdf7;border:1px solid #ece5d3;border-radius:16px;overflow:hidden;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
+.order-card:hover{transform:translateY(-2px);box-shadow:0 12px 24px rgba(48,43,25,.1)}
+.order-card .top{display:flex;gap:12px;align-items:flex-start;padding:14px 14px 0}
+.order-card .thumb{flex:0 0 52px;width:52px;height:52px;border-radius:15px;display:grid;place-items:center;font-size:27px;line-height:1;background:var(--soft,#fdf3cd);box-shadow:inset 0 0 0 1px rgba(48,43,25,.05)}
+.order-card .title{flex:1;min-width:0}
+.order-card .name{font-size:15px;font-weight:700;line-height:1.35;overflow-wrap:anywhere}
+.order-card .spec{font-size:11px;color:#8b8577;margin-top:3px}
+.order-card .tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
+.order-card .tags span{font-size:10px;padding:2px 7px;border-radius:20px;background:var(--soft,#fdf3cd);color:#6f6a5c}
+.order-card .price{margin-left:auto;text-align:right;font-size:16px;font-weight:800;color:#a86f00;white-space:nowrap;font-variant-numeric:tabular-nums}
+.order-card .price small{display:block;font-size:10px;font-weight:400;color:#8b8577;margin-top:3px}
+.order-card .stats{display:grid;grid-template-columns:repeat(3,1fr);margin-top:13px;background:#fffcf3;border-top:1px solid #f1ead7;border-bottom:1px solid #f1ead7}
+.order-card .stats .stat{padding:10px 6px;text-align:center;min-width:0}
+.order-card .stats .stat+.stat{border-left:1px dashed #ece5d3}
+.order-card .stats .k{display:block;font-size:10px;color:#8b8577}
+.order-card .stats .v{display:block;font-size:14px;font-weight:700;margin-top:4px;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.order-card .foot{display:flex;align-items:center;gap:8px;padding:11px 14px}
+.order-card .foot .no{font-size:10px;padding:3px 7px;border-radius:6px;background:#f2ecdb;color:#77715f;white-space:nowrap}
+.order-card .foot .place{flex:1;min-width:0;font-size:11px;color:#77715f;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.order-card .foot .remove{padding:6px 11px;font-size:11px;border-radius:8px;white-space:nowrap}
+.order-card .tune{border-top:1px dashed #ece5d3}
+.order-card .tune>summary{display:flex;align-items:center;gap:6px;padding:9px 14px;font-size:11px;color:#8b8577;cursor:pointer;list-style:none}
+.order-card .tune>summary::-webkit-details-marker{display:none}
+.order-card .tune>summary::after{content:'▾';margin-left:auto;transition:transform .2s ease}
+.order-card .tune[open]>summary{color:#5f5a4c}
+.order-card .tune[open]>summary::after{transform:rotate(180deg)}
+.order-card .fields{display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:2px 14px 14px}
+.order-card .fields label{display:flex;flex-direction:column;gap:4px;font-size:11px;color:#8b8577;min-width:0}
+.order-card .fields label.wide{grid-column:1/-1}
+.order-card .fields input,.order-card .fields select{width:100%;padding:7px 8px;font-size:12px;min-height:36px}
+/* 已装袋：卡片被收进配送箱后留在网格里的状态 */
+.order-card.packed{border-color:#cfd9c4;background:#fcfdf9}
+.order-card.packed::before{content:'';position:absolute;inset:0 0 auto;height:3px;background:linear-gradient(90deg,#34a853,#8bc34a)}
+.order-card.flying{position:fixed;z-index:75;margin:0;pointer-events:none;box-shadow:0 18px 34px rgba(48,43,25,.22);will-change:transform,opacity}
+.order-cards .empty{grid-column:1/-1;text-align:center;padding:34px 18px;background:#fdfaf0;border:1px dashed #ece5d3;border-radius:12px;color:#8b8577;font-size:13px}
+
+/* ===== 配送箱：自动选单后，选中的卡片会飞入箱中 ===== */
+.crate{position:fixed;right:22px;bottom:22px;z-index:60;width:252px;border:1px solid #45412f;border-radius:16px;background:#2d2b23;color:#fff8e1;box-shadow:0 18px 36px rgba(35,32,20,.3)}
+.crate-head{display:flex;align-items:center;gap:11px;width:100%;padding:11px 13px;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.crate-box{position:relative;flex:0 0 34px;width:34px;height:25px;margin-top:5px;border-radius:3px 3px 7px 7px;background:#e8bd43}
+.crate-box i{position:absolute;top:-6px;left:-3px;right:-3px;height:9px;border-radius:4px;background:#c99a06;transform-origin:left center;transition:transform .34s cubic-bezier(.34,1.4,.64,1)}
+.crate[data-state=empty] .crate-box{opacity:.5}
+.crate[data-state=packing] .crate-box i{transform:translateY(-5px) rotate(-16deg)}
+.crate-text{flex:1;min-width:0}
+.crate-text b{display:block;font-size:13px}
+.crate-text small{display:block;margin-top:2px;font-size:11px;color:#c9c2ad}
+.crate-badge{min-width:28px;padding:3px 8px;border-radius:20px;background:#e8bd43;color:#2d2b23;font-size:12px;font-weight:800;text-align:center;font-variant-numeric:tabular-nums}
+.crate-items{display:grid;gap:6px;padding:0 12px 12px;max-height:210px;overflow:auto}
+.crate-items[hidden]{display:none}
+.crate-items .chip{display:flex;align-items:center;gap:8px;padding:6px 9px;border-radius:9px;background:#3b3830;font-size:11px;animation:chipIn .3s ease both}
+.crate-items .chip small{margin-left:auto;color:#c9c2ad;font-variant-numeric:tabular-nums}
+@keyframes chipIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
 @media(max-width:1100px){.campus-route{grid-template-columns:1fr}.campus-metrics{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:700px){.campus-controls{gap:10px}.campus-controls label{min-width:125px}.campus-metrics .stat strong{font-size:21px}.campus-table{max-height:320px}.campus-route{gap:12px}}
+@media(max-width:700px){.campus-controls{gap:10px}.campus-controls label{min-width:125px}.campus-metrics .stat strong{font-size:21px}.campus-route{gap:12px}
+.order-cards{grid-template-columns:1fr;max-height:none;gap:12px}
+.crate{right:12px;bottom:12px;width:auto}.crate-text,.crate-items{display:none}}
+@media(prefers-reduced-motion:reduce){.order-card,.crate-box i{transition:none}.crate-items .chip{animation:none}}

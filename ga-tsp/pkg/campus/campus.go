@@ -26,7 +26,10 @@ type Map struct {
 	Places    []Place     `json:"places"`
 	Roads     []Road      `json:"roads"`
 	Distances [][]float64 `json:"-"`
-	next      [][]int
+	// DepotMeters 是各地点沿道路到取餐点（0 号地点）的距离（米），不可达记 -1；
+	// 供前端在订单卡片上标注单笔配送距离，不参与任何算法计算。
+	DepotMeters []float64 `json:"depotMeters"`
+	next        [][]int
 }
 
 // Default uses fictional locations and measured-in-meters simulation edges.
@@ -94,6 +97,14 @@ func (m *Map) Build() error {
 				}
 			}
 		}
+	}
+	m.DepotMeters = make([]float64, n)
+	for i, d := range m.Distances[0] {
+		if math.IsInf(d, 0) {
+			m.DepotMeters[i] = -1
+			continue
+		}
+		m.DepotMeters[i] = d
 	}
 	return nil
 }
