@@ -18,6 +18,14 @@
 <section id="route">
   <div class="section-head"><div><p class="eyebrow">03 / CAMPUS ATLAS</p><h2>这趟配送，走进真实校园。</h2></div><a href="https://ditu.amap.com/place/B0FFIWKUF8" target="_blank" rel="noopener noreferrer" class="map-source">高德原图 ↗</a></div>
   <p id="mapNotice" class="muted"></p>
+  <div id="evolution" class="evolution" hidden>
+    <p class="eyebrow">GA / 路线进化回放</p><h3>看见更短的路线被发现</h3>
+    <p class="muted">计算完成后回放真实逐代记录。固定本趟订单，展示历史最佳路线；得分 = 1000 ÷（1 + 总米数），越高越好。最终帧与局部搜索候选择优，不保证全局最优。</p>
+    <div class="toolbar"><button id="evoPlay">播放</button><button id="evoStep">下一代</button><button id="evoReset">从头回放</button><button id="evoEnd">最终路线</button><label>速度 <select id="evoSpeed"><option value="500">慢速</option><option value="150" selected>标准</option><option value="40">快速</option></select></label></div>
+    <label class="evo-progress">迭代进度 <input id="evoSeek" type="range" min="0" max="0" value="0"></label>
+    <div id="evoStats" class="campus-metrics" aria-live="off"></div><p id="evoStatus" role="status"></p>
+    <div class="evo-charts"><div><strong>历史最佳总路程 / 米 ↓</strong><svg id="evoDistance" viewBox="0 0 500 170" role="img" aria-label="路线总长度收敛曲线"></svg></div><div><strong>路线适应度 ↑</strong><svg id="evoFitness" viewBox="0 0 500 170" role="img" aria-label="路线适应度提高曲线"></svg></div></div>
+  </div>
   <div class="campus-route atlas-layout">
     <div class="map-shell" id="mapShell">
       <div class="map-heading"><div><strong>西安邮电大学</strong><small>长安校区 · 西区</small></div><span class="map-tag">校园布局重建</span></div>

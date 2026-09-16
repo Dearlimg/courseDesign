@@ -23,10 +23,12 @@ type candidate struct {
 }
 
 type planner struct {
-	ctx   context.Context
-	req   models.PlanRequest
-	m     campus.Map
-	cache map[uint64]candidate
+	capture bool
+	frames  []models.RouteFrame
+	ctx     context.Context
+	req     models.PlanRequest
+	m       campus.Map
+	cache   map[uint64]candidate
 }
 
 func ValidatePlan(req *models.PlanRequest) error {
@@ -190,6 +192,9 @@ func (p *planner) repair(mask uint64) candidate {
 
 func (p *planner) refine(c candidate) (candidate, error) {
 	if len(c.stops) < 4 {
+		if p.capture {
+			p.recordRoute(c, 0, "直接路线")
+		}
 		return c, nil
 	}
 	inst := &tsp.Instance{Name: "校园道路", EdgeType: "matrix", Cities: []tsp.City{}, Matrix: [][]float64{}}
@@ -204,12 +209,31 @@ func (p *planner) refine(c candidate) (candidate, error) {
 	params := ga.DefaultParams()
 	params.Seed, params.Population, params.Generations = p.req.Seed, 60, 100
 	params.Initialization, params.LocalSearch = "mixed", true
+	if p.capture {
+		params.Population, params.Generations = p.req.Population, p.req.Generations
+		params.Initialization, params.LocalSearch = "random", false
+	}
 	r, err := ga.SolveContext(p.ctx, inst, params)
 	if err != nil {
 		return c, err
 	}
 	if err := inst.ValidateTour(r.BestTour); err != nil {
 		return c, err
+	}
+	if p.capture {
+		var incumbent candidate
+		for _, generation := range r.Generations {
+			stops := make([]int, len(c.stops))
+			for i, index := range generation.BestTour {
+				stops[i] = c.stops[index]
+			}
+			stops = rotateDepot(stops)
+			current := candidate{mask: c.mask, stops: stops, metrics: p.measure(c.mask, stops)}
+			if incumbent.stops == nil || current.metrics.DistanceMeters < incumbent.metrics.DistanceMeters {
+				incumbent = current
+			}
+			p.recordRoute(incumbent, generation.Gen, "GA 进化")
+		}
 	}
 	if r.BestDistance < c.metrics.DistanceMeters {
 		stops := make([]int, len(c.stops))
@@ -218,6 +242,9 @@ func (p *planner) refine(c candidate) (candidate, error) {
 		}
 		c.stops = rotateDepot(stops)
 		c.metrics = p.measure(c.mask, c.stops)
+	}
+	if p.capture {
+		p.recordRoute(c, p.req.Generations, "最终择优（含局部搜索候选）")
 	}
 	return c, nil
 }
@@ -319,11 +346,19 @@ func Plan(ctx context.Context, req models.PlanRequest) (models.PlanResult, error
 		mask := uint64(1)<<len(req.Batch.Orders) - 1
 		base := p.evaluate(mask)
 		result.Baseline, result.BaselineName = base.metrics, "最近邻 + 2-opt"
+		p.capture = true
 		best, err = p.refine(base)
 		result.CurveUnit = "米"
 		result.Curve = []float64{base.metrics.DistanceMeters, best.metrics.DistanceMeters}
 	} else {
 		best, result.Curve, err = p.search()
+		if err == nil {
+			p.capture = true
+			best, err = p.refine(best)
+			if err == nil {
+				result.Curve[len(result.Curve)-1] = p.score(best)
+			}
+		}
 	}
 	if err != nil {
 		return result, err
@@ -331,6 +366,7 @@ func Plan(ctx context.Context, req models.PlanRequest) (models.PlanResult, error
 	if req.Mode == "business" && !best.metrics.Feasible {
 		return result, fmt.Errorf("未获得可行方案")
 	}
+	result.RouteFrames = p.frames
 	result.Stops, result.Metrics = best.stops, p.measure(best.mask, best.stops)
 	for i, o := range req.Batch.Orders {
 		if best.mask&(1<<i) != 0 {

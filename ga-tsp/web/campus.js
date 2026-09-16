@@ -1,6 +1,7 @@
+import { RouteReplay } from './route-replay.js';
 import { csv, download } from './export.js';
 import { CampusMap } from './campus-map.js';
-let atlas, focusedPlace = 0;
+let atlas, replay, focusedPlace = 0;
 
 const $ = id => document.getElementById(id);
 const money = value => (value / 100).toFixed(2);
@@ -37,6 +38,7 @@ function updateButtons() {
 }
 async function job(message, action) {
   if (busy) return;
+  replay?.pause();
   busy = true; controller = new AbortController();
   document.querySelectorAll('main button, main input, main select').forEach(el => { el.disabled = true; });
   $('cancel').hidden = false; $('cancel').disabled = false;
@@ -55,6 +57,7 @@ function persist() {
   } catch { tell('本机存储不可用；可使用服务端保存或导出。',true); }
 }
 function invalidate() {
+  replay?.clear();
   if (result || comparison) { $('planStatus').textContent = '输入已变化，旧结果已失效，请重新规划。'; $('planStatus').className = 'stale'; }
   result = undefined; comparison = undefined;
   for (const id of ['metrics','selectedOrders','excludedOrders','comparisonRows','comparisonRuns','curve']) $(id).replaceChildren();
@@ -204,6 +207,10 @@ function setupMap() {
     const option = node('option',place.name); option.value=place.id; $('mapPlace').append(option);
   }
   atlas = new CampusMap($('campusMap'),map,showPlace);
+  replay = new RouteReplay(frame => {
+    atlas.update(batch, {...result, stops:frame.stops, legs:frame.legs});
+    renderStops({...result, stops:frame.stops, legs:frame.legs});
+  });
   $('mapZoomIn').onclick=()=>atlas.zoom(1.35);
   $('mapZoomOut').onclick=()=>atlas.zoom(1/1.35);
   $('mapFit').onclick=()=>atlas.fit();
@@ -299,6 +306,11 @@ function renderResult(plan) {
   $('excludedOrders').replaceChildren(...plan.excluded.map(o => node('div',`${menuFor(o).icon} ${o.id}：${o.reason}`)));
   resetCrate();
   if (plan.selected.length) packCrate(plan.selected);
+  drawMap(); drawCurve(plan); updateButtons();
+  renderStops(plan);
+  replay.load(plan);
+}
+function renderStops(plan) {
   const stops=plan.stops.length > 1 ? [...plan.stops,0] : [0];
   $('stopList').replaceChildren(...stops.map((id,index) => {
     const orders=plan.selected.filter(o => o.destinationId===id).map(o=>o.id).join('、');
@@ -310,7 +322,6 @@ function renderResult(plan) {
     if(orders && !(index===stops.length-1 && index>0))item.append(node('small',orders));
     return item;
   }));
-  drawMap(); drawCurve(plan); updateButtons();
 }
 function drawCurve(plan) {
   const values=plan.curve,svg=$('curve'); svg.replaceChildren();

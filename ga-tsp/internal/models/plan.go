@@ -23,7 +23,17 @@ type PlanMetrics struct {
 	Feasible       bool    `json:"feasible"`
 }
 
+type RouteFrame struct {
+	Gen            int         `json:"gen"`
+	Phase          string      `json:"phase"`
+	DistanceMeters float64     `json:"distanceMeters"`
+	Fitness        float64     `json:"fitness"`
+	Stops          []int       `json:"stops"`
+	Legs           []CampusLeg `json:"legs"`
+}
+
 type PlanResult struct {
+	RouteFrames        []RouteFrame    `json:"routeFrames"`
 	Legs               []CampusLeg     `json:"legs"`
 	Input              PlanRequest     `json:"input"`
 	Selected           []CampusOrder   `json:"selected"`
