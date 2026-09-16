@@ -4,6 +4,7 @@
 - `maze-bfs-dfs/`：指导书**题目十二**迷宫求解（BFS 最短路 + DFS 对比），模块名 `mazeweb`，端口 **8080**，**保底交付项目**，功能已完整
 - `ga-tsp/`：**主项目** GA 遗传算法求解 TSP（att48 基准）+ 进化过程可视化，模块名 `simple_tuan`（某团），端口 **8081**，已分层 controller/logic/dao/models + pkg + gin + gorm
 - 根目录保留指导书 docx 与提取文本 `.docx_text.txt`
+- 根目录 `README.md`（2026-09-16 编写，245 行）：课程设计总说明，六节——主项目功能/技术栈/快速开始/API 表/算法与测试、迷宫题目十二、Docker 部署、工作区结构、文档索引、说明与边界
 
 ## 技术约定（用户偏好）
 - 技术栈：**Go 后端 + 原生 HTML/CSS/JS + Canvas 前端**，前后端分离；maze 项目保持纯标准库（net/http），ga-tsp 已换 **gin + gorm**（分层 controller/logic/dao），前端零框架
@@ -46,4 +47,5 @@
 - **落地进展（2026-09-15，分支 feat/qiji-dispatch）**：三层重构（gin+gorm）6 commit 完成；**校园调度 campus 模块 5 commit 完成**（仿真路网 pkg/campus → 订单批次 → 三模式规划 logic/plan.go → gorm 快照持久化 → 三策略对照+精确验证）；前端首页 index.html 已改为「校园配送决策」四区页面，旧工作台保留在 legacy.html
 - **已合并到 master（2026-09-15 13:39）**：`git merge --ff-only feat/qiji-dispatch` 快进成功，master 由 `b892a1b` → `d9d98ce`（含西校区路网建模 west.json + 交互式校区图 campus-map.js）；本地领先 origin/master **26 个提交，尚未 push**；feat 分支保留在 d9d98ce
 - **2026-09-15 收尾 4 个提交（全部入库，工作区干净）**：`6ec97a7` 品牌统一为某团 + 归档 docs/ 与 memory（含 `.gitignore` 忽略 `ga-tsp/run*.log`）；`f4143ca` 订单改点餐式卡片 + 单笔配送距离 + 配送箱飞入动画（新增 campus.js 379 行、Map.DepotMeters）；`c0b1dd2` `.css`/`.js` 禁用缓存 + `.html` 后缀页面白名单；`74bd591` 刷新构建产物
-- **已知缺口（2026-09-15）**：~~ECS 8001 容器仍是 09-14 旧版~~ → **已更新为 d9d98ce 新版（13:45 部署）**；ST_ 命名统一（Task 6）未做；`gatsp`(30MB)/`gatsp.exe`(43MB) 构建产物仍被 git 跟踪，本地工作区有未提交的重新构建版本
+- **2026-09-16 提交 `f668a4a`（路线进化回放，14 files +391/-10）**：planner 增 capture 模式逐代记录 RouteFrame（`internal/logic/route_frames.go` + 测试）、`models.PlanResult.RouteFrames`、前端 `web/route-replay.js` 播放器 + index.html「路线进化回放」区块 + campus.css；附带 `work/report_measurements` 报告测量脚本；`.gitignore` 增 `*~`（编辑器备份不入库）；本地领先 origin/master **27 个提交，仍未 push**
+- **已知缺口（2026-09-16）**：ECS 8001 容器仍是 d9d98ce 版本（不含路线进化回放，需重新部署）；ST_ 命名统一（Task 6）未做；`gatsp`(30MB)/`gatsp.exe`(43MB) 构建产物仍被 git 跟踪
